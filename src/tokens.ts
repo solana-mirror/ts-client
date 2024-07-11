@@ -1,4 +1,3 @@
-import { rpc } from '@coral-xyz/anchor/dist/cjs/utils'
 import {
     fetchDigitalAssetWithAssociatedToken,
     mplTokenMetadata,
@@ -11,7 +10,7 @@ import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters'
 import { getPrice } from './price'
 import { USDC_PUBKEY } from './consts'
 
-export type SpotToken = {
+export type ParsedAta = {
     mint: PublicKey
     decimals: number
     name: string
@@ -42,7 +41,7 @@ export async function fetchTokenAccounts(
         const metadata = await fetchTokenMetadataByMint(connection, mint, owner)
         const price = await getPrice(connection, mint, USDC_PUBKEY)
 
-        const spotToken: SpotToken = {
+        const spotToken: ParsedAta = {
             mint,
             decimals: info.tokenAmount.decimals,
             name: metadata?.metadata?.name || '',
