@@ -1,6 +1,7 @@
 import { createJupiterApiClient } from '@jup-ag/api'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { getDecimals } from './tokens'
+import { token } from '@coral-xyz/anchor/dist/cjs/utils'
 
 /**
  * Use Jupiter to get swap quote
@@ -17,7 +18,7 @@ export async function getPrice(
     const jupiter = createJupiterApiClient()
 
     // Using USDC as $, if it's comparing USDC to itself return 1
-    if (tokenA.equals(tokenB)) {
+    if (tokenA.toString() === tokenB.toString()) {
         return 1
     }
 
@@ -25,12 +26,16 @@ export async function getPrice(
     const decimalsB = await getDecimals(connection, tokenB)
     const amount = Math.pow(10, decimalsA)
 
-    const quote = await jupiter.quoteGet({
-        inputMint: tokenA.toString(), // Mint address of the input token
-        outputMint: tokenB.toString(), // Mint address of the output token
-        amount, // raw input amount of tokens
-    })
+    try {
+        const quote = await jupiter.quoteGet({
+            inputMint: tokenA.toString(), // Mint address of the input token
+            outputMint: tokenB.toString(), // Mint address of the output token
+            amount, // raw input amount of tokens
+        })
 
-    const price = +quote.outAmount
-    return price / Math.pow(10, decimalsB)
+        const price = +quote.outAmount
+        return price / Math.pow(10, decimalsB)
+    } catch {
+        return 0
+    }
 }
