@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals'
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import {
     fetchTokenAccounts,
     fetchTokenMetadataByMint,
@@ -7,9 +7,13 @@ import {
 } from '../src/tokens'
 import { USDC_ADDRESS, USDC_PUBKEY } from '../src/consts'
 import { createBatches, getBalance } from '../src/utils'
-import { fetchTransactions } from '../src/transactions'
+import {
+    fetchFormattedTransactions,
+    fetchTransactions,
+} from '../src/transactions'
 import { BN } from 'bn.js'
 import { configDotenv } from 'dotenv'
+import { format } from 'path'
 
 configDotenv()
 
@@ -38,7 +42,7 @@ describe('Formatting tokens', () => {
         expect(metadata?.metadata?.symbol).toEqual('USDC')
         expect(metadata?.metadata?.name).toEqual('USD Coin')
         expect(decimals).toEqual(6)
-    })
+    }, 10000)
     test('Gets correct ATAs for test account', async () => {
         const atas = await fetchTokenAccounts(connection, TEST_ACCOUNT)
         const usdcAta = atas.find((ata) => ata.mint.toString() === USDC_ADDRESS)
@@ -78,8 +82,59 @@ describe('Transactions', () => {
         const batches = createBatches([], 10)
         expect(batches).toStrictEqual([])
     })
-    test('Get transactions', async () => {
-        const transactions = await fetchTransactions(connection, TEST_ACCOUNT)
-        expect(transactions).toHaveLength(2)
-    })
+    test('Get formatted transactions', async () => {
+        const formattedTransactions = await fetchFormattedTransactions(
+            connection,
+            TEST_ACCOUNT
+        )
+
+        expect(formattedTransactions).toHaveLength(2)
+
+        // SOL transfer of 0.025
+        expect(formattedTransactions[0]).toStrictEqual({
+            blockTime: expect.any(Number),
+            signatures: expect.any(Array),
+            logs: expect.any(Array),
+            balances: {
+                So11111111111111111111111111111111111111112: {
+                    pre: {
+                        amount: new BN(0),
+                        formatted: 0,
+                    },
+                    post: {
+                        amount: new BN(0.025 * LAMPORTS_PER_SOL),
+                        formatted: 0.025,
+                    },
+                },
+            },
+        })
+
+        expect(formattedTransactions[1]).toStrictEqual({
+            blockTime: expect.any(Number),
+            signatures: expect.any(Array),
+            logs: expect.any(Array),
+            balances: {
+                EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
+                    pre: {
+                        amount: new BN(0),
+                        formatted: 0,
+                    },
+                    post: {
+                        amount: new BN(2000000),
+                        formatted: 2,
+                    },
+                },
+                So11111111111111111111111111111111111111112: {
+                    pre: {
+                        amount: new BN(0.025 * LAMPORTS_PER_SOL),
+                        formatted: 0.025,
+                    },
+                    post: {
+                        amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
+                        formatted: 0.008984229,
+                    },
+                },
+            },
+        })
+    }, 10000)
 })
