@@ -45,6 +45,7 @@ describe('Formatting tokens', () => {
 
         expect(usdcAta).toStrictEqual({
             mint: USDC_PUBKEY,
+            ata: new PublicKey('Xs5AGA129VSQ1KoYuiftwSF5iCzGeskoxiZFyUudaav'),
             decimals: 6,
             symbol: 'USDC',
             name: 'USD Coin',

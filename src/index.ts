@@ -18,7 +18,11 @@ async function run() {
     const balance = getBalance(accs)
     const txs = await fetchTransactions(connection, owner)
 
-    console.log(txs[0])
+    console.log(txs[txs.length - 2]?.transaction.message.staticAccountKeys)
+    console.log(txs[txs.length - 2]?.meta?.preBalances)
+    console.log(txs[txs.length - 2]?.meta?.postBalances)
+    console.log(txs[txs.length - 2]?.meta?.preTokenBalances)
+    console.log(txs[txs.length - 2]?.meta?.postTokenBalances)
 }
 
 run().catch(console.error)

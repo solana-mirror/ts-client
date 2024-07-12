@@ -17,6 +17,7 @@ import { SOL_ADDRESS, SOL_PUBKEY, USDC_PUBKEY } from './consts'
 
 export type ParsedAta = {
     mint: PublicKey
+    ata: PublicKey
     decimals: number
     name: string
     symbol: string
@@ -48,6 +49,7 @@ export async function fetchTokenAccounts(
 
         const spotToken: ParsedAta = {
             mint,
+            ata: ata.pubkey,
             decimals: info.tokenAmount.decimals,
             name: metadata?.metadata?.name || '',
             symbol: metadata?.metadata?.symbol || '',
@@ -69,6 +71,7 @@ export async function fetchTokenAccounts(
 
         const spotToken: ParsedAta = {
             mint: SOL_PUBKEY,
+            ata: owner,
             decimals: 9,
             name: 'Solana',
             symbol: 'SOL',

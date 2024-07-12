@@ -1,9 +1,23 @@
-import { Connection, PublicKey } from '@solana/web3.js'
+import {
+    Connection,
+    PublicKey,
+    VersionedTransactionResponse,
+} from '@solana/web3.js'
 import { createBatches } from './utils'
+import BN from 'bn.js'
 
 type FetchTransactionsOpts = {
     batchSize: number
     fetchFirstBatches?: number
+}
+
+type FormattedAmount = {
+    amount: BN
+    formatted: number
+}
+
+type ParsedTransaction = {
+    balances: Record<string, { pre: FormattedAmount; post: FormattedAmount }>
 }
 
 /**
@@ -39,3 +53,5 @@ export async function fetchTransactions(
     )
     return transactions.flat()
 }
+
+export function parseTransaction(tx: VersionedTransactionResponse) {}
