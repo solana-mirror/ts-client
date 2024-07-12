@@ -4,11 +4,16 @@ import {
 } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { Connection, ParsedAccountData, PublicKey } from '@solana/web3.js'
+import {
+    Connection,
+    LAMPORTS_PER_SOL,
+    ParsedAccountData,
+    PublicKey,
+} from '@solana/web3.js'
 import BN from 'bn.js'
 import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters'
 import { getPrice } from './price'
-import { USDC_PUBKEY } from './consts'
+import { SOL_ADDRESS, SOL_PUBKEY, USDC_PUBKEY } from './consts'
 
 export type ParsedAta = {
     mint: PublicKey
@@ -57,7 +62,28 @@ export async function fetchTokenAccounts(
         return spotToken
     })
 
-    const parsedAtas = await Promise.all(parsedPromises)
+    const solPromise = (async () => {
+        const balance = await connection.getBalance(owner)
+        const formattedBalance = balance / LAMPORTS_PER_SOL
+        const price = await getPrice(connection, SOL_PUBKEY, USDC_PUBKEY)
+
+        const spotToken: ParsedAta = {
+            mint: SOL_PUBKEY,
+            decimals: 9,
+            name: 'Solana',
+            symbol: 'SOL',
+            image: '',
+            price,
+            balance: {
+                amount: new BN(balance),
+                formatted: formattedBalance,
+            },
+        }
+
+        return spotToken
+    })()
+
+    const parsedAtas = await Promise.all([...parsedPromises, solPromise])
     return parsedAtas
 }
 
