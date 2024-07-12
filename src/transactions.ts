@@ -66,6 +66,7 @@ export async function fetchTransactions(
         ) as VersionedTransactionResponse[]
     return includeFailed ? flat : flat.filter((tx) => tx?.meta?.err === null)
 }
+
 /**
  * Transforms the RPC transaction into a readable format
  * @param tx Versioned tx only
@@ -154,6 +155,13 @@ export function parseTransaction(
     return parsedTx
 }
 
+/**
+ * Fetches the transactions for an address and formats them
+ * @param connection
+ * @param address
+ * @param opts
+ * @returns Formatted transactions
+ */
 export async function fetchFormattedTransactions(
     connection: Connection,
     address: PublicKey,
