@@ -18,7 +18,7 @@ async function run() {
     const balance = getBalance(accs)
     const txs = await fetchTransactions(connection, owner)
 
-    console.log(balance)
+    console.log(txs[0])
 }
 
 run().catch(console.error)

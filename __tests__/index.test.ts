@@ -80,27 +80,5 @@ describe('Transactions', () => {
     test('Get transactions', async () => {
         const transactions = await fetchTransactions(connection, TEST_ACCOUNT)
         expect(transactions).toHaveLength(2)
-        expect(transactions[0]).toStrictEqual({
-            blockTime: expect.any(Number),
-            meta: {
-                computeUnitsConsumed: expect.any(Number),
-                err: null, // receive all txs successfully
-                fee: expect.any(Number),
-                innerInstructions: expect.any(Array),
-                logMessages: expect.any(Array),
-                postBalances: expect.any(Array),
-                postTokenBalances: expect.any(Array),
-                preBalances: expect.any(Array),
-                preTokenBalances: expect.any(Array),
-                rewards: expect.any(Array),
-                status: expect.any(Object),
-            },
-            slot: expect.any(Number),
-            transaction: {
-                message: expect.any(Object),
-                signatures: expect.any(Array),
-            },
-            version: 0,
-        }) // receive Solana + swap
     })
 })

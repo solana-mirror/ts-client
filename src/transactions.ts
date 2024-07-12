@@ -32,7 +32,7 @@ export async function fetchTransactions(
 
     const transactions = await Promise.all(
         batches.map(async (batch) => {
-            return await connection.getParsedTransactions(batch, {
+            return await connection.getTransactions(batch, {
                 maxSupportedTransactionVersion: 0,
             })
         })
