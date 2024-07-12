@@ -6,7 +6,7 @@ import {
     getDecimals,
 } from '../src/tokens'
 import { USDC_ADDRESS, USDC_PUBKEY } from '../src/consts'
-import { createBatches } from '../src/utils'
+import { createBatches, getBalance } from '../src/utils'
 import { fetchTransactions } from '../src/transactions'
 import { BN } from 'bn.js'
 import { configDotenv } from 'dotenv'
@@ -56,6 +56,12 @@ describe('Formatting tokens', () => {
             },
         })
     })
+    test('Get balance', async () => {
+        const accs = await fetchTokenAccounts(connection, TEST_ACCOUNT)
+        const balance = getBalance(accs)
+
+        expect(typeof balance).toStrictEqual('number')
+    })
 })
 
 describe('Transactions', () => {
@@ -78,7 +84,7 @@ describe('Transactions', () => {
             blockTime: expect.any(Number),
             meta: {
                 computeUnitsConsumed: expect.any(Number),
-                err: null, // all txs successful
+                err: null, // receive all txs successfully
                 fee: expect.any(Number),
                 innerInstructions: expect.any(Array),
                 logMessages: expect.any(Array),

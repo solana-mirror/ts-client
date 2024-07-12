@@ -2,6 +2,7 @@ import dotenv from 'dotenv'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { fetchTokenAccounts } from './tokens'
 import { fetchTransactions } from './transactions'
+import { getBalance } from './utils'
 
 dotenv.config()
 
@@ -14,10 +15,10 @@ async function run() {
     const owner = new PublicKey('RAPExZp7b7UN8hyUu7kVnjfCeXoSQ9U6ywJuepJYbJH')
 
     const accs = await fetchTokenAccounts(connection, owner)
+    const balance = getBalance(accs)
     const txs = await fetchTransactions(connection, owner)
 
-    // console.log(txs)
-    // console.log(accs)
+    console.log(balance)
 }
 
 run().catch(console.error)

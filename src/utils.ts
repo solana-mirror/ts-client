@@ -1,3 +1,5 @@
+import { ParsedAta } from './tokens'
+
 export function createBatches<T>(
     arr: T[],
     batchSize: number,
@@ -12,4 +14,12 @@ export function createBatches<T>(
         }
     }
     return batches
+}
+
+export function getBalance(accs: [...ParsedAta[], ParsedAta]) {
+    let balance = 0
+    for (let i = 0; i < accs.length; i++) {
+        balance += accs[i].price * accs[i].balance.formatted
+    }
+    return +balance.toFixed(2)
 }
