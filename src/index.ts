@@ -22,8 +22,12 @@ async function run() {
     }
     const connection = new Connection(rpc, 'confirmed')
     const owner = new PublicKey('RAPExZp7b7UN8hyUu7kVnjfCeXoSQ9U6ywJuepJYbJH')
+    const txs = await fetchFormattedTransactions(connection, owner, {
+        batchSize: 50,
+        fetchFirstBatches: 3,
+    })
 
-    const txs = await fetchFormattedTransactions(connection, owner)
+    console.log(txs)
 }
 
 run().catch(console.error)

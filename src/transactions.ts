@@ -12,7 +12,7 @@ import { SOL_ADDRESS } from './consts'
 type FetchTransactionsOpts = {
     batchSize: number
     fetchFirstBatches?: number
-    includeFailed: boolean
+    includeFailed?: boolean
 }
 
 type FormattedAmount = {
