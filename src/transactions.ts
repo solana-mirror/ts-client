@@ -11,6 +11,10 @@ import {
 import { createBatches } from './utils'
 import BN from 'bn.js'
 import { SOL_ADDRESS } from './consts'
+import { getHistoricalPrice } from './price'
+import coingeckoTokens from 'coingecko.json'
+import dayjs from 'dayjs'
+import { CoinGeckoClient } from 'coingecko-api-v3'
 
 type FetchTransactionsOpts = {
     batchSize: number
@@ -24,7 +28,6 @@ type FormattedAmount = {
 }
 
 type Balance = {
-    price: FormattedAmount
     pre: FormattedAmount
     post: FormattedAmount
 }
@@ -105,6 +108,7 @@ export async function fetchTransactions(
  * @returns Parsed transaction
  */
 export function parseTransaction(
+    coingecko: CoinGeckoClient,
     tx: VersionedTransactionResponse,
     signer: PublicKey
 ) {
@@ -120,7 +124,6 @@ export function parseTransaction(
 
     if (preSol !== postSol) {
         balances[SOL_ADDRESS] = {
-            price: { amount: new BN(0), formatted: 0 },
             pre: {
                 amount: new BN(preSol),
                 formatted: preSol / LAMPORTS_PER_SOL,
@@ -140,13 +143,12 @@ export function parseTransaction(
         (postBalance) => postBalance.owner === signer.toString()
     ) as TokenBalance[]
 
-    preTokenBalances.forEach((preBalance) => {
+    for (const preBalance of preTokenBalances) {
         const { mint, uiTokenAmount } = preBalance
         const { amount, uiAmount } = uiTokenAmount
 
         if (!balances[mint]) {
             balances[mint] = {
-                price: { amount: new BN(0), formatted: 0 },
                 pre: { amount: new BN(0), formatted: 0 },
                 post: { amount: new BN(0), formatted: 0 },
             }
@@ -156,15 +158,14 @@ export function parseTransaction(
             amount: new BN(amount),
             formatted: uiAmount || 0,
         }
-    })
+    }
 
-    postTokenBalances.forEach((postBalance) => {
+    for (const postBalance of postTokenBalances) {
         const { mint, uiTokenAmount } = postBalance
         const { amount, uiAmount } = uiTokenAmount
 
         if (!balances[mint]) {
             balances[mint] = {
-                price: { amount: new BN(0), formatted: 0 },
                 pre: { amount: new BN(0), formatted: 0 },
                 post: { amount: new BN(0), formatted: 0 },
             }
@@ -174,7 +175,7 @@ export function parseTransaction(
             amount: new BN(amount),
             formatted: uiAmount || 0,
         }
-    })
+    }
 
     const instructions =
         tx.meta?.logMessages
@@ -205,9 +206,10 @@ export function parseTransaction(
  */
 export async function fetchFormattedTransactions(
     connection: Connection,
+    coingecko: CoinGeckoClient,
     address: PublicKey,
     opts?: FetchTransactionsOpts
 ) {
     const txs = await fetchTransactions(connection, address, opts)
-    return txs.map((tx) => parseTransaction(tx, address))
+    return txs.map((tx) => parseTransaction(coingecko, tx, address))
 }

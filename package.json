@@ -28,6 +28,7 @@
         "bn.js": "^5.2.1",
         "coingecko-api": "^1.0.10",
         "coingecko-api-v3": "^0.0.29",
+        "dayjs": "^1.11.11",
         "decimal.js": "^10.4.3",
         "dotenv": "^16.4.5"
     },

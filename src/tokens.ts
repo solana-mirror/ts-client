@@ -13,8 +13,10 @@ import {
 import BN from 'bn.js'
 import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters'
 import { getPrice } from './price'
-import { SOL_PUBKEY, USDC_PUBKEY } from './consts'
+import { SOL_ADDRESS, SOL_PUBKEY, USDC_PUBKEY } from './consts'
 import { CoinGeckoClient } from 'coingecko-api-v3'
+import fs from 'fs'
+import coingeckoTokens from 'coingecko.json'
 
 export type ParsedAta = {
     mint: PublicKey
@@ -33,7 +35,6 @@ export type ParsedAta = {
 
 export async function fetchTokenAccounts(
     connection: Connection,
-    coingecko: CoinGeckoClient,
     owner: PublicKey
 ) {
     const { value: atas } = await connection.getParsedTokenAccountsByOwner(
@@ -49,16 +50,20 @@ export async function fetchTokenAccounts(
 
         const metadata = await fetchTokenMetadataByMint(connection, mint, owner)
         const price = await getPrice(connection, mint, USDC_PUBKEY)
-        const coingeckoId = await getCoingeckoId(coingecko, mint)
+
+        const name = metadata?.metadata.name || ''
+        const symbol = metadata?.metadata.symbol || ''
+        const image = metadata?.metadata.uri || ''
+        const coingeckoId = coingeckoTokens[mint.toString()]?.id
 
         const spotToken: ParsedAta = {
             mint,
             ata: ata.pubkey,
             coingeckoId,
             decimals: info.tokenAmount.decimals,
-            name: metadata?.metadata?.name || '',
-            symbol: metadata?.metadata?.symbol || '',
-            image: metadata?.metadata?.uri || '',
+            name,
+            symbol,
+            image,
             price,
             balance: {
                 amount: new BN(info.tokenAmount.amount),
@@ -73,7 +78,7 @@ export async function fetchTokenAccounts(
         const balance = await connection.getBalance(owner)
         const formattedBalance = balance / LAMPORTS_PER_SOL
         const price = await getPrice(connection, SOL_PUBKEY, USDC_PUBKEY)
-        const coingeckoId = await getCoingeckoId(coingecko, SOL_PUBKEY)
+        const coingeckoId = coingeckoTokens[SOL_ADDRESS].id
 
         const spotToken: ParsedAta = {
             mint: SOL_PUBKEY,
@@ -128,13 +133,38 @@ export async function getDecimals(
     return data.parsed.info.decimals
 }
 
-export async function getCoingeckoId(
-    coingecko: CoinGeckoClient,
-    token: PublicKey
-) {
+/**
+ * Gets all the coingecko ids for the tokens and outputs a json file
+ * with an object whose keys are the token addresses
+ * @param coingecko
+ */
+export async function generateCoingeckoIds(coingecko: CoinGeckoClient) {
     const tokens = await coingecko.coinList({
         include_platform: true,
     })
 
-    return tokens.find((x) => x.platforms?.solana === token.toString())?.id
+    const sortedTokens: Record<
+        string,
+        { name: string; id: string; symbol: string }
+    > = {}
+
+    for (const token of tokens) {
+        const { platforms, name, id, symbol } = token
+
+        if (!platforms?.solana || !name || !id || !symbol) {
+            continue
+        }
+        sortedTokens[platforms.solana] = {
+            name,
+            id,
+            symbol,
+        }
+    }
+
+    fs.writeFile(
+        'coingecko.json',
+        JSON.stringify(sortedTokens, null, 2),
+        {},
+        () => {}
+    )
 }

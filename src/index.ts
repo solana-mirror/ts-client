@@ -1,8 +1,13 @@
 import dotenv from 'dotenv'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { CoinGeckoClient } from 'coingecko-api-v3'
-import { fetchTokenAccounts } from './tokens'
+import { fetchTokenAccounts, generateCoingeckoIds } from './tokens'
 import { getHistoricalPrice, ParsedHistoricalData } from './price'
+import {
+    fetchFormattedTransactions,
+    fetchTransactions,
+    parseTransaction,
+} from './transactions'
 
 dotenv.config()
 
@@ -22,23 +27,18 @@ async function run() {
         process.env.COINGEKO
     )
 
-    const atas = await fetchTokenAccounts(connection, coingecko, owner)
+    // await generateCoingeckoIds(coingecko)
 
-    const timestamp = 1720818000
+    const atas = await fetchTokenAccounts(connection, owner)
 
-    const validAtas = atas.filter((ata) => ata.coingeckoId)
+    const txs = await fetchTransactions(connection, owner, {
+        batchSize: 50,
+        fetchFirstBatches: 1,
+    })
 
-    if (!validAtas[2].coingeckoId) {
-        return
-    }
+    console.log(await getHistoricalPrice(coingecko, 'billy', 1720494134))
 
-    const data = await getHistoricalPrice(
-        coingecko,
-        validAtas[2].coingeckoId,
-        timestamp
-    )
-
-    console.log(data)
+    // const formattedTxs = await Promise.all(txs.map(async (tx) => await parseTransaction(coingecko, tx, owner)))
 }
 
 run().catch(console.error)
