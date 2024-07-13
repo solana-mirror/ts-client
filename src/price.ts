@@ -1,6 +1,6 @@
 import { createJupiterApiClient } from '@jup-ag/api'
 import { Connection, PublicKey } from '@solana/web3.js'
-import { getDecimals } from './tokens'
+import { getDecimals, ParsedAta } from './tokens'
 import { ApiV3PoolInfoItem, Raydium } from '@raydium-io/raydium-sdk-v2'
 import { SOL_ADDRESS, SOL_PUBKEY, USDC_PUBKEY } from './consts'
 import { CoinGeckoClient, CoinListResponseItem } from 'coingecko-api-v3'
@@ -51,11 +51,21 @@ export async function getPrice(
     }
 }
 
+export type ParsedHistoricalData = {
+    prices: [number, number][]
+}
+
 export async function getHistoricalPrice(
-    raydium: Raydium,
-    connection: Connection,
-    token: PublicKey
+    coingecko: CoinGeckoClient,
+    id: string,
+    timestamp: number
 ) {
-    // Implement coingecko
-    // Fallback to raydium
+    const prices = await coingecko.coinIdMarketChartRange({
+        id,
+        vs_currency: 'usd',
+        from: timestamp - 7200,
+        to: timestamp,
+    })
+
+    return prices.prices[prices.prices.length - 1][1] // return last price
 }

@@ -4,7 +4,7 @@
     "description": "",
     "main": "src/index.ts",
     "scripts": {
-        "dev":"ts-node -r tsconfig-paths/register src/index.ts", 
+        "dev": "ts-node -r tsconfig-paths/register src/index.ts",
         "build": "rm -rf build/ && tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
         "start": "node -r tsconfig-paths/register build/index.js",
         "test": "jest",
@@ -26,6 +26,7 @@
         "@solana/spl-token": "0.4.6",
         "@solana/web3.js": "^1.94.0",
         "bn.js": "^5.2.1",
+        "coingecko-api": "^1.0.10",
         "coingecko-api-v3": "^0.0.29",
         "decimal.js": "^10.4.3",
         "dotenv": "^16.4.5"
