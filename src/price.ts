@@ -1,7 +1,18 @@
 import { createJupiterApiClient } from '@jup-ag/api'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { getDecimals } from './tokens'
-import { token } from '@coral-xyz/anchor/dist/cjs/utils'
+import { ApiV3PoolInfoItem, Raydium } from '@raydium-io/raydium-sdk-v2'
+import { SOL_ADDRESS, SOL_PUBKEY, USDC_PUBKEY } from './consts'
+import { CoinGeckoClient, CoinListResponseItem } from 'coingecko-api-v3'
+
+/**
+ * @note Raydium SDK's pool response is wrongly typed, this is the right type for the fetchPoolByMints function
+ */
+export type RaydiumPools = {
+    count: number
+    data: ApiV3PoolInfoItem[]
+    hasNextPage: boolean
+}
 
 /**
  * Use Jupiter to get swap quote
@@ -38,4 +49,13 @@ export async function getPrice(
     } catch {
         return 0
     }
+}
+
+export async function getHistoricalPrice(
+    raydium: Raydium,
+    connection: Connection,
+    token: PublicKey
+) {
+    // Implement coingecko
+    // Fallback to raydium
 }

@@ -1,8 +1,11 @@
 import {
+    ConfirmedSignatureInfo,
     Connection,
     LAMPORTS_PER_SOL,
     PublicKey,
     TokenBalance,
+    Transaction,
+    TransactionSignature,
     VersionedTransactionResponse,
 } from '@solana/web3.js'
 import { createBatches } from './utils'
@@ -20,11 +23,44 @@ type FormattedAmount = {
     formatted: number
 }
 
+type Balance = {
+    price: FormattedAmount
+    pre: FormattedAmount
+    post: FormattedAmount
+}
+
 type ParsedTransaction = {
     blockTime: number
     signatures: string[]
     logs: string[]
-    balances: Record<string, { pre: FormattedAmount; post: FormattedAmount }>
+    balances: Record<string, Balance>
+    parsedInstructions: string[] // Parsed ixs from the tx log
+}
+
+type FetchSignaturesOpts = {
+    before?: TransactionSignature
+    after?: TransactionSignature
+    limit: number
+}
+
+/**
+ * Fetches signatures of an address
+ * @param connection
+ * @param address
+ * @param opts before and after unix timestamps
+ */
+export async function fetchSignatures(
+    connection: Connection,
+    address: PublicKey,
+    opts?: FetchSignaturesOpts
+) {
+    const { before, after, limit } = opts || {}
+    const signatures = await connection.getSignaturesForAddress(address, {
+        before,
+        until: after,
+        limit,
+    })
+    return signatures.map((sig) => sig.signature)
 }
 
 /**
@@ -43,12 +79,7 @@ export async function fetchTransactions(
         batchSize: 100, // default batchSize
     }
 
-    const txHashes = await connection.getSignaturesForAddress(address)
-
-    const signatures = txHashes.map((hash) => {
-        return hash.signature
-    })
-
+    const signatures = await fetchSignatures(connection, address)
     const batches = createBatches(signatures, batchSize, fetchFirstBatches)
 
     const transactions = await Promise.all(
@@ -77,10 +108,7 @@ export function parseTransaction(
     tx: VersionedTransactionResponse,
     signer: PublicKey
 ) {
-    const balances: Record<
-        string,
-        { pre: FormattedAmount; post: FormattedAmount }
-    > = {}
+    const balances: Record<string, Balance> = {}
 
     // Handle SOL
     const ownerIdx = tx.transaction.message.staticAccountKeys.findIndex(
@@ -92,6 +120,7 @@ export function parseTransaction(
 
     if (preSol !== postSol) {
         balances[SOL_ADDRESS] = {
+            price: { amount: new BN(0), formatted: 0 },
             pre: {
                 amount: new BN(preSol),
                 formatted: preSol / LAMPORTS_PER_SOL,
@@ -117,6 +146,7 @@ export function parseTransaction(
 
         if (!balances[mint]) {
             balances[mint] = {
+                price: { amount: new BN(0), formatted: 0 },
                 pre: { amount: new BN(0), formatted: 0 },
                 post: { amount: new BN(0), formatted: 0 },
             }
@@ -134,6 +164,7 @@ export function parseTransaction(
 
         if (!balances[mint]) {
             balances[mint] = {
+                price: { amount: new BN(0), formatted: 0 },
                 pre: { amount: new BN(0), formatted: 0 },
                 post: { amount: new BN(0), formatted: 0 },
             }
@@ -145,11 +176,21 @@ export function parseTransaction(
         }
     })
 
+    const instructions =
+        tx.meta?.logMessages
+            ?.filter((log) => {
+                return log.startsWith('Program log: Instruction: ')
+            })
+            .map((log) => {
+                return log.replace('Program log: Instruction: ', '')
+            }) || []
+
     const parsedTx: ParsedTransaction = {
         blockTime: tx.blockTime || -1,
         signatures: tx.transaction.signatures,
         logs: tx.meta?.logMessages || [],
         balances,
+        parsedInstructions: instructions,
     }
 
     return parsedTx

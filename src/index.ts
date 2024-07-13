@@ -1,17 +1,7 @@
 import dotenv from 'dotenv'
-import {
-    Connection,
-    PublicKey,
-    VersionedTransaction,
-    VersionedTransactionResponse,
-} from '@solana/web3.js'
+import { Connection, PublicKey } from '@solana/web3.js'
+import { CoinGeckoClient } from 'coingecko-api-v3'
 import { fetchTokenAccounts } from './tokens'
-import {
-    fetchFormattedTransactions,
-    fetchTransactions,
-    parseTransaction,
-} from './transactions'
-import { getBalance } from './utils'
 
 dotenv.config()
 
@@ -22,12 +12,18 @@ async function run() {
     }
     const connection = new Connection(rpc, 'confirmed')
     const owner = new PublicKey('RAPExZp7b7UN8hyUu7kVnjfCeXoSQ9U6ywJuepJYbJH')
-    const txs = await fetchFormattedTransactions(connection, owner, {
-        batchSize: 50,
-        fetchFirstBatches: 3,
-    })
 
-    console.log(txs)
+    const coingecko = new CoinGeckoClient(
+        {
+            timeout: 10000,
+            autoRetry: true,
+        },
+        process.env.COINGEKO
+    )
+
+    const atas = await fetchTokenAccounts(connection, coingecko, owner)
+
+    console.log(atas)
 }
 
 run().catch(console.error)
