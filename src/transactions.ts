@@ -1,20 +1,20 @@
 import {
-    ConfirmedSignatureInfo,
     Connection,
     LAMPORTS_PER_SOL,
     PublicKey,
     TokenBalance,
-    Transaction,
     TransactionSignature,
     VersionedTransactionResponse,
 } from '@solana/web3.js'
 import { createBatches } from './utils'
 import BN from 'bn.js'
 import { SOL_ADDRESS } from './consts'
-import { getHistoricalPrice } from './price'
-import coingeckoTokens from 'coingecko.json'
 import dayjs from 'dayjs'
-import { CoinGeckoClient } from 'coingecko-api-v3'
+
+export type ChartData = {
+    timestamp: number
+    balances: Record<string, { amount: BN; formatted: number }>
+}
 
 type FetchTransactionsOpts = {
     batchSize: number
@@ -67,6 +67,22 @@ export async function fetchSignatures(
 }
 
 /**
+ * Fetches the transactions for an address and formats them
+ * @param connection
+ * @param address
+ * @param opts
+ * @returns Formatted transactions
+ */
+export async function fetchFormattedTransactions(
+    connection: Connection,
+    address: PublicKey,
+    opts?: FetchTransactionsOpts
+) {
+    const txs = await fetchTransactions(connection, address, opts)
+    return txs.map((tx) => parseTransaction(tx, address))
+}
+
+/**
  * Fetches all signatures of an address and parses transactions
  * @param connection
  * @param address
@@ -108,7 +124,6 @@ export async function fetchTransactions(
  * @returns Parsed transaction
  */
 export function parseTransaction(
-    coingecko: CoinGeckoClient,
     tx: VersionedTransactionResponse,
     signer: PublicKey
 ) {
@@ -198,18 +213,137 @@ export function parseTransaction(
 }
 
 /**
- * Fetches the transactions for an address and formats them
+ * Walks through the tx array and adds up every balance change
+ * @param txs
+ * @returns
+ */
+export function getBalanceStates(txs: ParsedTransaction[]) {
+    const states: ChartData[] = []
+
+    for (const tx of txs) {
+        const { blockTime, balances } = tx
+        let state: ChartData
+
+        if (states.length === 0) {
+            state = {
+                timestamp: blockTime,
+                balances: {},
+            }
+        } else {
+            state = {
+                balances: { ...states[states.length - 1].balances },
+                timestamp: blockTime,
+            }
+        }
+
+        for (const [mint, balance] of Object.entries(balances)) {
+            const { post } = balance
+
+            // Remove 0 bals
+            if (post.formatted === 0) {
+                if (state.balances[mint]) {
+                    delete state.balances[mint]
+                }
+                continue
+            }
+
+            if (
+                !state.balances[mint] ||
+                state.balances[mint].formatted !== post.formatted
+            ) {
+                state.balances[mint] = post
+            }
+        }
+
+        states.push(state)
+    }
+
+    return states
+}
+
+type FilterBalanceStatesOpts = {
+    timeframe: 'D' | 'H'
+    range: number
+}
+
+/**
+ * Filters the balance states to a specific timeframe and range
+ * @param states
+ * @param opts.timeframe "D" | "H"
+ * @param opts.range number of days or hours
+ */
+export function filterBalanceStates(
+    states: ChartData[],
+    opts: FilterBalanceStatesOpts
+) {
+    const { timeframe, range } = opts
+    const tSeconds = timeframe === 'D' ? 86400 : 3600
+
+    const filteredStates: ChartData[] = []
+
+    const finalTimestamp = Math.floor(dayjs().unix() / tSeconds) * tSeconds
+    const initialTimestamp = finalTimestamp - range * tSeconds
+
+    let lastIdx = 0
+    for (let i = 0; i <= range; i++) {
+        const timestamp = initialTimestamp + i * tSeconds
+
+        for (let j = lastIdx; j < states.length; j++) {
+            if (states[j].timestamp >= timestamp) {
+                if (j === 0) {
+                    break
+                }
+                const stateToPush = { ...states[j - 1], timestamp }
+                filteredStates.push(stateToPush)
+                lastIdx = j
+                break
+            }
+        }
+
+        // Fill empty periods
+        if (
+            filteredStates.length &&
+            filteredStates[filteredStates.length - 1].timestamp !== timestamp
+        ) {
+            const stateToPush = { ...states[states.length - 1], timestamp }
+            filteredStates.push(stateToPush)
+        }
+    }
+
+    // Also add current state
+    const current = states[states.length - 1]
+    if (current !== filteredStates[filteredStates.length - 1]) {
+        // Add current timestamp
+        filteredStates.push({
+            ...states[states.length - 1],
+            timestamp: dayjs().unix(),
+        })
+    }
+
+    return filteredStates
+}
+
+/**
+ * Fetches transactions, gets balances and adjusts for timeframe
  * @param connection
  * @param address
- * @param opts
- * @returns Formatted transactions
+ * @param filterOpts
+ * @param fetchTxOpts
+ * @returns
  */
-export async function fetchFormattedTransactions(
+export async function getChartData(
     connection: Connection,
-    coingecko: CoinGeckoClient,
     address: PublicKey,
-    opts?: FetchTransactionsOpts
+    filterOpts: FilterBalanceStatesOpts,
+    fetchTxOpts?: FetchTransactionsOpts
 ) {
-    const txs = await fetchTransactions(connection, address, opts)
-    return txs.map((tx) => parseTransaction(coingecko, tx, address))
+    const txs = await fetchFormattedTransactions(
+        connection,
+        address,
+        fetchTxOpts
+    )
+    const states = getBalanceStates(txs)
+    const filteredStates = filterBalanceStates(states, filterOpts)
+
+    return filteredStates
 }

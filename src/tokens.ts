@@ -33,6 +33,13 @@ export type ParsedAta = {
     }
 }
 
+/**
+ * Gets the ATAs for an account and token info for each
+ * @param connection
+ * @param owner
+ * @todo Migrate to [Solana.fm](https://api.solana.fm/v1/addresses/{account-hash}/tokens) endpoint once it's not in beta anymore
+ * @returns
+ */
 export async function fetchTokenAccounts(
     connection: Connection,
     owner: PublicKey

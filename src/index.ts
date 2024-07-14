@@ -6,6 +6,9 @@ import { getHistoricalPrice, ParsedHistoricalData } from './price'
 import {
     fetchFormattedTransactions,
     fetchTransactions,
+    filterBalanceStates,
+    getBalanceStates,
+    getChartData,
     parseTransaction,
 } from './transactions'
 
@@ -27,18 +30,12 @@ async function run() {
         process.env.COINGEKO
     )
 
-    // await generateCoingeckoIds(coingecko)
-
-    const atas = await fetchTokenAccounts(connection, owner)
-
-    const txs = await fetchTransactions(connection, owner, {
-        batchSize: 50,
-        fetchFirstBatches: 1,
+    const chartData = await getChartData(connection, owner, {
+        timeframe: 'D',
+        range: 14,
     })
 
-    console.log(await getHistoricalPrice(coingecko, 'billy', 1720494134))
-
-    // const formattedTxs = await Promise.all(txs.map(async (tx) => await parseTransaction(coingecko, tx, owner)))
+    console.log(chartData)
 }
 
 run().catch(console.error)
