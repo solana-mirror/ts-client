@@ -9,8 +9,10 @@ import {
     filterBalanceStates,
     getBalanceStates,
     getChartData,
+    getTotalBalances,
     parseTransaction,
 } from './transactions'
+import { getBalance } from './utils'
 
 dotenv.config()
 
@@ -35,7 +37,16 @@ async function run() {
         range: 14,
     })
 
-    console.log(chartData)
+    const totalBalances = await getTotalBalances(coingecko, chartData)
+    const atas = await fetchTokenAccounts(connection, owner)
+
+    const currentBalance = getBalance(atas)
+
+    if (totalBalances.length > 0) {
+        totalBalances[totalBalances.length - 1].usdValue = currentBalance
+    }
+
+    console.log(totalBalances)
 }
 
 run().catch(console.error)

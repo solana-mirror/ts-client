@@ -10,10 +10,24 @@ import { createBatches } from './utils'
 import BN from 'bn.js'
 import { SOL_ADDRESS } from './consts'
 import dayjs from 'dayjs'
+import { CoinGeckoClient } from 'coingecko-api-v3'
+import coingeckoTokens from 'coingecko.json'
 
 export type ChartData = {
     timestamp: number
     balances: Record<string, { amount: BN; formatted: number }>
+}
+
+export type ChartDataWithPrice = ChartData & {
+    timestamp: number
+    balances: Record<string, BalanceWithPrice>
+    usdValue: number
+}
+
+type BalanceWithPrice = {
+    amount: BN
+    formatted: number
+    price: number
 }
 
 type FetchTransactionsOpts = {
@@ -310,17 +324,84 @@ export function filterBalanceStates(
         }
     }
 
-    // Also add current state
-    const current = states[states.length - 1]
-    if (current !== filteredStates[filteredStates.length - 1]) {
-        // Add current timestamp
-        filteredStates.push({
-            ...states[states.length - 1],
-            timestamp: dayjs().unix(),
+    filteredStates.push({
+        ...states[states.length - 1],
+        timestamp: dayjs().unix(),
+    })
+
+    return filteredStates
+}
+
+/**
+ * Matches coinGecko token prices with each transaction and returns formatted chartStates
+ * @param coingecko
+ * @param states
+ * @returns
+ */
+export async function getTotalBalances(
+    coingecko: CoinGeckoClient,
+    states: ChartData[]
+) {
+    const balances = states.map((state) => state.balances)
+    const mints = balances.map((bal) => Object.keys(bal))
+    const uniqueMints = [...new Set(mints.flat())]
+
+    const mintPrices = {}
+
+    const from = states[0].timestamp
+    const to = states[states.length - 1].timestamp
+
+    const newStates = [] as ChartDataWithPrice[]
+
+    for (const mint of uniqueMints) {
+        const id = coingeckoTokens[mint]?.id
+        if (!id) {
+            continue
+        }
+        const prices = await coingecko.coinIdMarketChartRange({
+            id,
+            vs_currency: 'usd',
+            from,
+            to,
+        })
+
+        mintPrices[mint] = prices.prices
+    }
+
+    for (const state of states) {
+        const { timestamp, balances: stateBals } = state
+        const balsWithPrice = {} as Record<string, BalanceWithPrice>
+
+        for (const [mint, balance] of Object.entries(stateBals)) {
+            if (!mintPrices[mint]) {
+                continue
+            }
+
+            const index = Math.floor((timestamp - from) / 3600)
+
+            const price = mintPrices[mint][index]
+                ? mintPrices[mint][index][1]
+                : 0
+
+            balsWithPrice[mint] = {
+                ...balance,
+                price,
+            }
+        }
+
+        const usdValue = Object.values(balsWithPrice).reduce(
+            (total, { formatted, price }) => total + formatted * price,
+            0
+        )
+
+        newStates.push({
+            timestamp,
+            balances: balsWithPrice,
+            usdValue,
         })
     }
 
-    return filteredStates
+    return newStates
 }
 
 /**
