@@ -16,7 +16,7 @@ import { getPrice } from './price'
 import { SOL_ADDRESS, SOL_PUBKEY, USDC_PUBKEY } from './consts'
 import { CoinGeckoClient } from 'coingecko-api-v3'
 import fs from 'fs'
-import coingeckoTokens from 'coingecko.json'
+import coingeckoTokens from '../coingecko.json'
 
 export type ParsedAta = {
     mint: PublicKey

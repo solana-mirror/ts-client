@@ -50,6 +50,7 @@ describe('Formatting tokens', () => {
         expect(usdcAta).toStrictEqual({
             mint: USDC_PUBKEY,
             ata: new PublicKey('Xs5AGA129VSQ1KoYuiftwSF5iCzGeskoxiZFyUudaav'),
+            coingeckoId: 'usd-coin',
             decimals: 6,
             symbol: 'USDC',
             name: 'USD Coin',
@@ -107,6 +108,7 @@ describe('Transactions', () => {
                     },
                 },
             },
+            parsedInstructions: [],
         })
 
         expect(formattedTransactions[1]).toStrictEqual({
@@ -135,6 +137,7 @@ describe('Transactions', () => {
                     },
                 },
             },
+            parsedInstructions: expect.any(Array),
         })
     }, 10000)
 })

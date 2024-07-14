@@ -11,7 +11,7 @@ import BN from 'bn.js'
 import { SOL_ADDRESS } from './consts'
 import dayjs from 'dayjs'
 import { CoinGeckoClient } from 'coingecko-api-v3'
-import coingeckoTokens from 'coingecko.json'
+import coingeckoTokens from '../coingecko.json'
 
 export type ChartData = {
     timestamp: number
