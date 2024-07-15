@@ -348,7 +348,8 @@ export async function getTotalBalances(
 
     const mintPrices = {}
 
-    const from = states[0].timestamp
+    const from =
+        states.length === 1 ? states[0].timestamp - 7200 : states[0].timestamp
     const to = states[states.length - 1].timestamp
 
     const newStates = [] as ChartDataWithPrice[]

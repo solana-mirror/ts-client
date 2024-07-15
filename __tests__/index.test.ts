@@ -10,10 +10,16 @@ import { createBatches, getBalance } from '../src/utils'
 import {
     fetchFormattedTransactions,
     fetchTransactions,
+    filterBalanceStates,
+    getBalanceStates,
+    getChartData,
+    getTotalBalances,
 } from '../src/transactions'
 import { BN } from 'bn.js'
 import { configDotenv } from 'dotenv'
 import { format } from 'path'
+import dayjs from 'dayjs'
+import { CoinGeckoClient } from 'coingecko-api-v3'
 
 configDotenv()
 
@@ -62,7 +68,7 @@ describe('Formatting tokens', () => {
             },
         })
     })
-    test('Get balance', async () => {
+    test('Get current balance', async () => {
         const accs = await fetchTokenAccounts(connection, TEST_ACCOUNT)
         const balance = getBalance(accs)
 
@@ -140,4 +146,101 @@ describe('Transactions', () => {
             parsedInstructions: expect.any(Array),
         })
     }, 10000)
+})
+
+describe('Historical prices', () => {
+    test('Get correct historical balances for test account', async () => {
+        const txs = await fetchFormattedTransactions(connection, TEST_ACCOUNT)
+
+        const balances = getBalanceStates(txs)
+
+        expect(balances).toStrictEqual([
+            {
+                timestamp: 1720702580,
+                balances: {
+                    So11111111111111111111111111111111111111112: {
+                        amount: new BN(0.025 * LAMPORTS_PER_SOL),
+                        formatted: 0.025,
+                    },
+                },
+            },
+            {
+                balances: {
+                    So11111111111111111111111111111111111111112: {
+                        amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
+                        formatted: 0.008984229,
+                    },
+                    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
+                        amount: new BN(2000000),
+                        formatted: 2,
+                    },
+                },
+                timestamp: 1720702648,
+            },
+        ])
+    })
+    test('Get correct filtered states', async () => {
+        const txs = await fetchFormattedTransactions(connection, TEST_ACCOUNT)
+        const balanceStates = getBalanceStates(txs)
+        const filteredStates = filterBalanceStates(balanceStates, {
+            timeframe: 'D',
+            range: 14,
+        })
+        expect(filteredStates).toStrictEqual([
+            {
+                balances: {
+                    So11111111111111111111111111111111111111112: {
+                        amount: expect.any(BN),
+                        formatted: 0.008984229,
+                    },
+                    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
+                        amount: expect.any(BN),
+                        formatted: 2,
+                    },
+                },
+                timestamp: expect.any(Number),
+            }, // This only works if the test account doesn't make any more movement
+        ])
+    })
+    test('Get correct total balances', async () => {
+        const coingecko = new CoinGeckoClient(
+            {
+                timeout: 40000,
+                autoRetry: true,
+            },
+            process.env.COINGEKO
+        )
+        const chartData = await getChartData(connection, TEST_ACCOUNT, {
+            timeframe: 'D',
+            range: 14,
+        })
+        const totalBalances = await getTotalBalances(coingecko, chartData)
+        const atas = await fetchTokenAccounts(connection, TEST_ACCOUNT)
+
+        const currentBalance = getBalance(atas)
+
+        if (totalBalances.length > 0) {
+            totalBalances[totalBalances.length - 1].usdValue = currentBalance
+        }
+
+        expect(totalBalances).toStrictEqual([
+            {
+                timestamp: expect.any(Number),
+                balances: {
+                    So11111111111111111111111111111111111111112: {
+                        amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
+                        formatted: 0.008984229,
+                        price: expect.any(Number),
+                    },
+                    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
+                        amount: new BN(2000000),
+                        formatted: 2,
+                        price: expect.any(Number),
+                    },
+                },
+                usdValue: expect.any(Number),
+            },
+        ])
+    })
+    test('', () => {})
 })
