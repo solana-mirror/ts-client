@@ -5,6 +5,10 @@ import SolanaMirror from '../src/SolanaMirror'
 
 const owner = new PublicKey('RAPExZp7b7UN8hyUu7kVnjfCeXoSQ9U6ywJuepJYbJH')
 
+const TEST_ACCOUNT = new PublicKey(
+    'GhCar5JLrUencisZDBLPFsWiWQs5qfimejpU5wjzgS8y'
+)
+
 dotenv.config()
 
 async function run() {
@@ -23,13 +27,13 @@ async function run() {
     )
 
     const client = new SolanaMirror({
-        watch: owner,
+        watch: TEST_ACCOUNT,
         connection,
         coingecko,
     })
 
     console.log(
-        client.getChartData({
+        await client.getChartData({
             timeframe: 'D',
             range: 14,
         })

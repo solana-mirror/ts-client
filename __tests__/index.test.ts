@@ -15,6 +15,8 @@ import SolanaMirror from '../src/SolanaMirror'
 
 configDotenv()
 
+const owner = new PublicKey('RAPExZp7b7UN8hyUu7kVnjfCeXoSQ9U6ywJuepJYbJH')
+
 // Test account only has USDC ATA, with balance of 2 USDC
 const TEST_ACCOUNT = new PublicKey(
     'GhCar5JLrUencisZDBLPFsWiWQs5qfimejpU5wjzgS8y'
@@ -39,6 +41,22 @@ const solanaMirror = new SolanaMirror({
     watch: TEST_ACCOUNT,
     connection,
     coingecko,
+})
+
+describe('Parent class', () => {
+    test('Get correct watch address', () => {
+        const testClient = new SolanaMirror({
+            watch: TEST_ACCOUNT,
+            connection,
+            coingecko,
+        })
+
+        const watchAddress = testClient.getWatchAddress()
+        expect(watchAddress).toStrictEqual(TEST_ACCOUNT)
+
+        testClient.setWatchAddress(owner)
+        expect(testClient.getWatchAddress()).toStrictEqual(owner)
+    })
 })
 
 describe('Formatting tokens', () => {
@@ -75,16 +93,25 @@ describe('Formatting tokens', () => {
             },
         })
     })
+    test('Get correct net worth', async () => {
+        const netWorth = await solanaMirror.getNetWorth()
+
+        // It adds the solana value to the USDC balance
+        expect(netWorth).toBeGreaterThan(2)
+    })
 })
 
 describe('Transactions', () => {
     test('Get correct batches', () => {
-        const arr = new Array(20).fill(0, 0, 10).fill(1, 10, 20)
+        const arr = new Array(20).fill(0, 0, 10).fill(1, 10, 20).fill(2, 20, 30)
 
-        const batches = createBatches(arr, 10)
-
+        const batches = createBatches(arr, 10, 15)
         expect(batches[0]).toStrictEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        expect(batches[1]).toStrictEqual([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+        expect(batches[1]).toStrictEqual([1, 1, 1, 1, 1])
+
+        const limitBatches = createBatches(arr, 10, 20)
+        expect(limitBatches[0]).toStrictEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        expect(limitBatches[1]).toStrictEqual([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
     })
     test('Handle empty array', () => {
         const batches = createBatches([], 10)
