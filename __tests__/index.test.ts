@@ -1,25 +1,24 @@
 import { describe, test, expect } from '@jest/globals'
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import {
-    fetchTokenAccounts,
     fetchTokenMetadataByMint,
     getDecimals,
-} from '../src/tokens'
-import { USDC_ADDRESS, USDC_PUBKEY } from '../src/consts'
-import { createBatches, getNetWorth } from '../src/utils'
-import {
-    fetchFormattedTransactions,
-    fetchTransactions,
-    filterBalanceStates,
-    getBalanceStates,
-    getChartData,
-    getTotalBalances,
-} from '../src/transactions'
+    USDC_ADDRESS,
+    USDC_PUBKEY,
+} from '../src'
+import { createBatches } from '../src/utils'
+import { filterBalanceStates, getBalanceStates } from '../src/transactions'
 import { BN } from 'bn.js'
 import { configDotenv } from 'dotenv'
 import { CoinGeckoClient } from 'coingecko-api-v3'
+import SolanaMirror from '../src/SolanaMirror'
 
 configDotenv()
+
+// Test account only has USDC ATA, with balance of 2 USDC
+const TEST_ACCOUNT = new PublicKey(
+    'GhCar5JLrUencisZDBLPFsWiWQs5qfimejpU5wjzgS8y'
+)
 
 const rpc = process.env.RPC_ENDPOINT
 if (!rpc) {
@@ -36,10 +35,11 @@ const coingecko = new CoinGeckoClient(
     process.env.COINGEKO
 )
 
-// Test account only has USDC ATA, with balance of 2 USDC
-const TEST_ACCOUNT = new PublicKey(
-    'GhCar5JLrUencisZDBLPFsWiWQs5qfimejpU5wjzgS8y'
-)
+const solanaMirror = new SolanaMirror({
+    watch: TEST_ACCOUNT,
+    connection,
+    coingecko,
+})
 
 describe('Formatting tokens', () => {
     test('Gets correct metadata for USDC', async () => {
@@ -57,7 +57,7 @@ describe('Formatting tokens', () => {
         expect(decimals).toEqual(6)
     }, 10000)
     test('Gets correct ATAs for test account', async () => {
-        const atas = await fetchTokenAccounts(connection, TEST_ACCOUNT)
+        const atas = await solanaMirror.getTokenAccounts()
         const usdcAta = atas.find((ata) => ata.mint.toString() === USDC_ADDRESS)
 
         expect(usdcAta).toStrictEqual({
@@ -91,10 +91,7 @@ describe('Transactions', () => {
         expect(batches).toStrictEqual([])
     })
     test('Get formatted transactions', async () => {
-        const formattedTransactions = await fetchFormattedTransactions(
-            connection,
-            TEST_ACCOUNT
-        )
+        const formattedTransactions = await solanaMirror.getTransactions()
 
         expect(formattedTransactions).toHaveLength(2)
 
@@ -151,7 +148,7 @@ describe('Transactions', () => {
 
 describe('Chart data', () => {
     test('Get correct historical balances for test account', async () => {
-        const txs = await fetchFormattedTransactions(connection, TEST_ACCOUNT)
+        const txs = await solanaMirror.getTransactions()
 
         const balances = getBalanceStates(txs)
 
@@ -181,7 +178,7 @@ describe('Chart data', () => {
         ])
     })
     test('Get correct filtered states', async () => {
-        const txs = await fetchFormattedTransactions(connection, TEST_ACCOUNT)
+        const txs = await solanaMirror.getTransactions()
         const balanceStates = getBalanceStates(txs)
         const filteredStates = filterBalanceStates(balanceStates, {
             timeframe: 'D',
@@ -204,18 +201,10 @@ describe('Chart data', () => {
         ])
     })
     test('Get correct total balances', async () => {
-        const chartData = await getChartData(
-            connection,
-            coingecko,
-            TEST_ACCOUNT,
-            {
-                timeframe: 'D',
-                range: 1000,
-            }
-        )
-
-        const atas = await fetchTokenAccounts(connection, TEST_ACCOUNT)
-        const currentBalance = getNetWorth(atas)
+        const chartData = await solanaMirror.getChartData({
+            timeframe: 'D',
+            range: 1000,
+        })
 
         expect(chartData).toStrictEqual([
             {

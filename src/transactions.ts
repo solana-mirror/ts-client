@@ -12,52 +12,29 @@ import { SOL_ADDRESS } from './consts'
 import dayjs from 'dayjs'
 import { CoinGeckoClient } from 'coingecko-api-v3'
 import coingeckoTokens from '../coingecko.json'
-
-export type ChartData = {
-    timestamp: number
-    balances: Record<string, { amount: BN; formatted: number }>
-}
-
-export type ChartDataWithPrice = ChartData & {
-    timestamp: number
-    balances: Record<string, BalanceWithPrice>
-    usdValue: number
-}
-
-type BalanceWithPrice = {
-    amount: BN
-    formatted: number
-    price: number
-}
-
-type FetchTransactionsOpts = {
-    batchSize: number
-    fetchFirstBatches?: number
-    includeFailed?: boolean
-}
-
-type FormattedAmount = {
-    amount: BN
-    formatted: number
-}
-
-type Balance = {
-    pre: FormattedAmount
-    post: FormattedAmount
-}
-
-type ParsedTransaction = {
-    blockTime: number
-    signatures: string[]
-    logs: string[]
-    balances: Record<string, Balance>
-    parsedInstructions: string[] // Parsed ixs from the tx log
-}
+import {
+    AmountWithPrice,
+    BalanceChange,
+    ChartData,
+    ChartDataWithPrice,
+    ParsedTransaction,
+} from './types'
 
 type FetchSignaturesOpts = {
     before?: TransactionSignature
     after?: TransactionSignature
     limit: number
+}
+
+export type FetchTransactionsOpts = {
+    batchSize: number
+    limit?: number
+    includeFailed?: boolean
+}
+
+export type FilterBalanceStatesOpts = {
+    timeframe: 'D' | 'H'
+    range: number
 }
 
 /**
@@ -81,22 +58,6 @@ export async function fetchSignatures(
 }
 
 /**
- * Fetches the transactions for an address and formats them
- * @param connection
- * @param address
- * @param opts
- * @returns Formatted transactions
- */
-export async function fetchFormattedTransactions(
-    connection: Connection,
-    address: PublicKey,
-    opts?: FetchTransactionsOpts
-) {
-    const txs = await fetchTransactions(connection, address, opts)
-    return txs.map((tx) => parseTransaction(tx, address))
-}
-
-/**
  * Fetches all signatures of an address and parses transactions
  * @param connection
  * @param address
@@ -108,12 +69,12 @@ export async function fetchTransactions(
     address: PublicKey,
     opts?: FetchTransactionsOpts
 ) {
-    const { batchSize, fetchFirstBatches, includeFailed } = opts || {
+    const { batchSize, limit, includeFailed } = opts || {
         batchSize: 100, // default batchSize
     }
 
     const signatures = await fetchSignatures(connection, address)
-    const batches = createBatches(signatures, batchSize, fetchFirstBatches)
+    const batches = createBatches(signatures, batchSize, limit)
 
     const transactions = await Promise.all(
         batches.map(async (batch) => {
@@ -141,7 +102,7 @@ export function parseTransaction(
     tx: VersionedTransactionResponse,
     signer: PublicKey
 ) {
-    const balances: Record<string, Balance> = {}
+    const balances: Record<string, BalanceChange> = {}
 
     // Handle SOL
     const ownerIdx = tx.transaction.message.staticAccountKeys.findIndex(
@@ -229,7 +190,6 @@ export function parseTransaction(
 /**
  * Walks through the tx array and adds up every balance change
  * @param txs
- * @returns
  */
 export function getBalanceStates(txs: ParsedTransaction[]) {
     const states: ChartData[] = []
@@ -273,11 +233,6 @@ export function getBalanceStates(txs: ParsedTransaction[]) {
     }
 
     return states
-}
-
-type FilterBalanceStatesOpts = {
-    timeframe: 'D' | 'H'
-    range: number
 }
 
 /**
@@ -336,7 +291,6 @@ export function filterBalanceStates(
  * Matches coinGecko token prices with each transaction and returns formatted chartStates
  * @param coingecko
  * @param states
- * @returns
  */
 export async function getTotalBalances(
     coingecko: CoinGeckoClient,
@@ -372,7 +326,7 @@ export async function getTotalBalances(
 
     for (const state of states) {
         const { timestamp, balances: stateBals } = state
-        const balsWithPrice = {} as Record<string, BalanceWithPrice>
+        const balsWithPrice = {} as Record<string, AmountWithPrice>
 
         for (const [mint, balance] of Object.entries(stateBals)) {
             if (!mintPrices[mint]) {
@@ -405,31 +359,4 @@ export async function getTotalBalances(
     }
 
     return newStates
-}
-
-/**
- * Fetches transactions, gets balances and adjusts for timeframe
- * @param connection
- * @param address
- * @param filterOpts
- * @param fetchTxOpts
- * @returns
- */
-export async function getChartData(
-    connection: Connection,
-    coingecko: CoinGeckoClient,
-    address: PublicKey,
-    filterOpts: FilterBalanceStatesOpts,
-    fetchTxOpts?: FetchTransactionsOpts
-) {
-    const txs = await fetchFormattedTransactions(
-        connection,
-        address,
-        fetchTxOpts
-    )
-    const states = getBalanceStates(txs)
-    const filteredStates = filterBalanceStates(states, filterOpts)
-    const chartWithBalances = getTotalBalances(coingecko, filteredStates)
-
-    return chartWithBalances
 }
