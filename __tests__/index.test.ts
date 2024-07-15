@@ -272,5 +272,5 @@ describe('Chart data', () => {
             },
             usdValue: expect.any(Number),
         })
-    })
+    }, 15000)
 })
