@@ -248,6 +248,14 @@ export function filterBalanceStates(
     const { timeframe, range } = opts
     const tSeconds = timeframe === 'D' ? 86400 : 3600
 
+    // We're pushing here to make sure all the states up to now are included,
+    // then we push this last state to the filtered states array
+    const _states = [...states]
+    _states.push({
+        ...states[states.length - 1],
+        timestamp: dayjs().unix(),
+    })
+
     const filteredStates: ChartData[] = []
 
     const finalTimestamp = Math.floor(dayjs().unix() / tSeconds) * tSeconds
@@ -257,12 +265,13 @@ export function filterBalanceStates(
     for (let i = 0; i <= range; i++) {
         const timestamp = initialTimestamp + i * tSeconds
 
-        for (let j = lastIdx; j < states.length; j++) {
-            if (states[j].timestamp >= timestamp) {
+        for (let j = lastIdx; j < _states.length; j++) {
+            if (_states[j].timestamp >= timestamp) {
                 if (j === 0) {
                     break
                 }
-                const stateToPush = { ...states[j - 1], timestamp }
+
+                const stateToPush = { ..._states[j - 1], timestamp }
                 filteredStates.push(stateToPush)
                 lastIdx = j
                 break
@@ -279,10 +288,8 @@ export function filterBalanceStates(
         }
     }
 
-    filteredStates.push({
-        ...states[states.length - 1],
-        timestamp: dayjs().unix(),
-    })
+    // We can simply push now after it did the checks
+    filteredStates.push(_states[_states.length - 1])
 
     return filteredStates
 }

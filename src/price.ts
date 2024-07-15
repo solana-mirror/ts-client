@@ -25,12 +25,16 @@ export async function getPrice(
     const decimalsB = await getDecimals(connection, tokenB)
     const amount = Math.pow(10, decimalsA)
 
-    const quote = await jupiter.quoteGet({
-        inputMint: tokenA.toString(), // Mint address of the input token
-        outputMint: tokenB.toString(), // Mint address of the output token
-        amount, // raw input amount of tokens
-    })
+    try {
+        const quote = await jupiter.quoteGet({
+            inputMint: tokenA.toString(), // Mint address of the input token
+            outputMint: tokenB.toString(), // Mint address of the output token
+            amount, // raw input amount of tokens
+        })
 
-    const price = +quote.outAmount
-    return price / Math.pow(10, decimalsB)
+        const price = +quote.outAmount
+        return price / Math.pow(10, decimalsB)
+    } catch {
+        return 0
+    }
 }

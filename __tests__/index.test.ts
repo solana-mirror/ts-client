@@ -17,7 +17,6 @@ configDotenv()
 
 const owner = new PublicKey('RAPExZp7b7UN8hyUu7kVnjfCeXoSQ9U6ywJuepJYbJH')
 
-// Test account only has USDC ATA, with balance of 2 USDC
 const TEST_ACCOUNT = new PublicKey(
     'GhCar5JLrUencisZDBLPFsWiWQs5qfimejpU5wjzgS8y'
 )
@@ -120,7 +119,7 @@ describe('Transactions', () => {
     test('Get formatted transactions', async () => {
         const formattedTransactions = await solanaMirror.getTransactions()
 
-        expect(formattedTransactions).toHaveLength(2)
+        expect(formattedTransactions).toHaveLength(4)
 
         // SOL transfer of 0.025
         expect(formattedTransactions[0]).toStrictEqual({
@@ -176,33 +175,53 @@ describe('Transactions', () => {
 describe('Chart data', () => {
     test('Get correct historical balances for test account', async () => {
         const txs = await solanaMirror.getTransactions()
-
         const balances = getBalanceStates(txs)
 
-        expect(balances).toStrictEqual([
-            {
-                timestamp: 1720702580,
-                balances: {
-                    So11111111111111111111111111111111111111112: {
-                        amount: new BN(0.025 * LAMPORTS_PER_SOL),
-                        formatted: 0.025,
-                    },
+        expect(balances[0]).toStrictEqual({
+            timestamp: 1720702580,
+            balances: {
+                So11111111111111111111111111111111111111112: {
+                    amount: new BN(0.025 * LAMPORTS_PER_SOL),
+                    formatted: 0.025,
                 },
             },
-            {
-                balances: {
-                    So11111111111111111111111111111111111111112: {
-                        amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
-                        formatted: 0.008984229,
-                    },
-                    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
-                        amount: new BN(2000000),
-                        formatted: 2,
-                    },
+        })
+
+        expect(balances[1]).toStrictEqual({
+            balances: {
+                So11111111111111111111111111111111111111112: {
+                    amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
+                    formatted: 0.008984229,
                 },
-                timestamp: 1720702648,
+                EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
+                    amount: new BN(2000000),
+                    formatted: 2,
+                },
             },
-        ])
+            timestamp: 1720702648,
+        })
+
+        expect(balances[balances.length - 1]).toStrictEqual({
+            balances: {
+                So11111111111111111111111111111111111111112: {
+                    amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
+                    formatted: 0.008984229,
+                },
+                EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
+                    amount: new BN(2000000),
+                    formatted: 2,
+                },
+                '3B5wuUrMEi5yATD7on46hKfej3pfmd7t1RKgrsN3pump': {
+                    amount: new BN(1000000),
+                    formatted: 1,
+                },
+                jTCmWBY9hussHxEX1mY9CdTqMmVDH1Mg9Tb8E321xgV: {
+                    amount: new BN(1000000),
+                    formatted: 1,
+                },
+            },
+            timestamp: expect.any(Number),
+        })
     })
     test('Get correct filtered states', async () => {
         const txs = await solanaMirror.getTransactions()
@@ -211,21 +230,25 @@ describe('Chart data', () => {
             timeframe: 'D',
             range: 1000,
         })
-        expect(filteredStates).toStrictEqual([
-            {
-                balances: {
-                    So11111111111111111111111111111111111111112: {
-                        amount: expect.any(BN),
-                        formatted: 0.008984229,
-                    },
-                    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
-                        amount: expect.any(BN),
-                        formatted: 2,
-                    },
+
+        expect(filteredStates.length).toBeGreaterThan(1)
+
+        // Daily close of the first day the wallet was active
+        expect(filteredStates[0].timestamp).toBe(1720742400)
+
+        expect(filteredStates[0]).toStrictEqual({
+            balances: {
+                So11111111111111111111111111111111111111112: {
+                    amount: expect.any(BN),
+                    formatted: 0.008984229,
                 },
-                timestamp: expect.any(Number),
+                EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
+                    amount: expect.any(BN),
+                    formatted: 2,
+                },
             },
-        ])
+            timestamp: expect.any(Number),
+        })
     })
     test('Get correct total balances', async () => {
         const chartData = await solanaMirror.getChartData({
@@ -233,23 +256,21 @@ describe('Chart data', () => {
             range: 1000,
         })
 
-        expect(chartData).toStrictEqual([
-            {
-                timestamp: expect.any(Number),
-                balances: {
-                    So11111111111111111111111111111111111111112: {
-                        amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
-                        formatted: 0.008984229,
-                        price: expect.any(Number),
-                    },
-                    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
-                        amount: new BN(2000000),
-                        formatted: 2,
-                        price: expect.any(Number),
-                    },
+        expect(chartData[0]).toStrictEqual({
+            timestamp: expect.any(Number),
+            balances: {
+                So11111111111111111111111111111111111111112: {
+                    amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
+                    formatted: 0.008984229,
+                    price: expect.any(Number),
                 },
-                usdValue: expect.any(Number),
+                EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
+                    amount: new BN(2000000),
+                    formatted: 2,
+                    price: expect.any(Number),
+                },
             },
-        ])
+            usdValue: expect.any(Number),
+        })
     })
 })
