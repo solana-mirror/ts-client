@@ -8,7 +8,7 @@ import {
 } from '@solana/web3.js'
 import { createBatches } from './utils'
 import BN from 'bn.js'
-import { SOL_ADDRESS } from './consts'
+import { SOL_ADDRESS, USDC_PUBKEY } from './consts'
 import dayjs from 'dayjs'
 import { CoinGeckoClient } from 'coingecko-api-v3'
 import coingeckoTokens from '../coingecko.json'
@@ -19,6 +19,7 @@ import {
     ChartDataWithPrice,
     ParsedTransaction,
 } from './types'
+import { getPrice } from './price'
 
 type FetchSignaturesOpts = {
     before?: TransactionSignature
@@ -300,6 +301,7 @@ export function filterBalanceStates(
  * @param states
  */
 export async function getTotalBalances(
+    connection: Connection,
     coingecko: CoinGeckoClient,
     states: ChartData[]
 ) {
@@ -331,7 +333,8 @@ export async function getTotalBalances(
         mintPrices[mint] = prices.prices
     }
 
-    for (const state of states) {
+    for (let i = 0; i < states.length; i++) {
+        const state = states[i]
         const { timestamp, balances: stateBals } = state
         const balsWithPrice = {} as Record<string, AmountWithPrice>
 
@@ -343,9 +346,21 @@ export async function getTotalBalances(
             // TODO: handle edge case in which coingecko returns daily data (more than 90 days)
             const index = Math.floor((timestamp - from) / 3600)
 
-            const price = mintPrices[mint][index]
-                ? mintPrices[mint][index][1]
-                : 0
+            const price = await (async () => {
+                // Get current price from Jup for accurracy
+                // Coingecko can be delayed up to 10-20 mins
+                if (i === states.length - 1) {
+                    return await getPrice(
+                        connection,
+                        new PublicKey(mint),
+                        USDC_PUBKEY
+                    )
+                }
+                if (!mintPrices[mint][index]) {
+                    return 0
+                }
+                return mintPrices[mint][index][1]
+            })()
 
             balsWithPrice[mint] = {
                 ...balance,

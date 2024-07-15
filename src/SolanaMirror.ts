@@ -145,6 +145,7 @@ export default class SolanaMirror {
         const states = getBalanceStates(txs)
         const filteredStates = filterBalanceStates(states, filterOpts)
         const chartWithBalances = getTotalBalances(
+            this.connection,
             this.coingecko,
             filteredStates
         )

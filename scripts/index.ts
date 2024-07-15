@@ -32,12 +32,12 @@ async function run() {
         coingecko,
     })
 
-    console.log(
-        await client.getChartData({
-            timeframe: 'D',
-            range: 14,
-        })
-    )
+    const chartData = await client.getChartData({
+        timeframe: 'D',
+        range: 14,
+    })
+
+    console.log(chartData[chartData.length - 1])
 }
 
 run().catch(console.error)
