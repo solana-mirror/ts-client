@@ -349,6 +349,7 @@ export async function getTotalBalances(
     const mintPrices = {}
 
     const from =
+        // Substract 2 hours if there's only one state to get hourly price precision
         states.length === 1 ? states[0].timestamp - 7200 : states[0].timestamp
     const to = states[states.length - 1].timestamp
 
@@ -378,6 +379,7 @@ export async function getTotalBalances(
                 continue
             }
 
+            // TODO: handle edge case in which coingecko returns daily data (more than 90 days)
             const index = Math.floor((timestamp - from) / 3600)
 
             const price = mintPrices[mint][index]
@@ -415,6 +417,7 @@ export async function getTotalBalances(
  */
 export async function getChartData(
     connection: Connection,
+    coingecko: CoinGeckoClient,
     address: PublicKey,
     filterOpts: FilterBalanceStatesOpts,
     fetchTxOpts?: FetchTransactionsOpts
@@ -426,6 +429,7 @@ export async function getChartData(
     )
     const states = getBalanceStates(txs)
     const filteredStates = filterBalanceStates(states, filterOpts)
+    const chartWithBalances = getTotalBalances(coingecko, filteredStates)
 
-    return filteredStates
+    return chartWithBalances
 }

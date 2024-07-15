@@ -6,7 +6,7 @@ import {
     getDecimals,
 } from '../src/tokens'
 import { USDC_ADDRESS, USDC_PUBKEY } from '../src/consts'
-import { createBatches, getBalance } from '../src/utils'
+import { createBatches, getNetWorth } from '../src/utils'
 import {
     fetchFormattedTransactions,
     fetchTransactions,
@@ -17,8 +17,6 @@ import {
 } from '../src/transactions'
 import { BN } from 'bn.js'
 import { configDotenv } from 'dotenv'
-import { format } from 'path'
-import dayjs from 'dayjs'
 import { CoinGeckoClient } from 'coingecko-api-v3'
 
 configDotenv()
@@ -27,7 +25,16 @@ const rpc = process.env.RPC_ENDPOINT
 if (!rpc) {
     throw new Error('RPC not provided')
 }
+
 const connection = new Connection(rpc, 'confirmed')
+
+const coingecko = new CoinGeckoClient(
+    {
+        timeout: 40000,
+        autoRetry: true,
+    },
+    process.env.COINGEKO
+)
 
 // Test account only has USDC ATA, with balance of 2 USDC
 const TEST_ACCOUNT = new PublicKey(
@@ -67,12 +74,6 @@ describe('Formatting tokens', () => {
                 formatted: 2,
             },
         })
-    })
-    test('Get current balance', async () => {
-        const accs = await fetchTokenAccounts(connection, TEST_ACCOUNT)
-        const balance = getBalance(accs)
-
-        expect(typeof balance).toStrictEqual('number')
     })
 })
 
@@ -148,7 +149,7 @@ describe('Transactions', () => {
     }, 10000)
 })
 
-describe('Historical prices', () => {
+describe('Chart data', () => {
     test('Get correct historical balances for test account', async () => {
         const txs = await fetchFormattedTransactions(connection, TEST_ACCOUNT)
 
@@ -184,7 +185,7 @@ describe('Historical prices', () => {
         const balanceStates = getBalanceStates(txs)
         const filteredStates = filterBalanceStates(balanceStates, {
             timeframe: 'D',
-            range: 14,
+            range: 1000,
         })
         expect(filteredStates).toStrictEqual([
             {
@@ -199,31 +200,24 @@ describe('Historical prices', () => {
                     },
                 },
                 timestamp: expect.any(Number),
-            }, // This only works if the test account doesn't make any more movement
+            },
         ])
     })
     test('Get correct total balances', async () => {
-        const coingecko = new CoinGeckoClient(
+        const chartData = await getChartData(
+            connection,
+            coingecko,
+            TEST_ACCOUNT,
             {
-                timeout: 40000,
-                autoRetry: true,
-            },
-            process.env.COINGEKO
+                timeframe: 'D',
+                range: 1000,
+            }
         )
-        const chartData = await getChartData(connection, TEST_ACCOUNT, {
-            timeframe: 'D',
-            range: 14,
-        })
-        const totalBalances = await getTotalBalances(coingecko, chartData)
+
         const atas = await fetchTokenAccounts(connection, TEST_ACCOUNT)
+        const currentBalance = getNetWorth(atas)
 
-        const currentBalance = getBalance(atas)
-
-        if (totalBalances.length > 0) {
-            totalBalances[totalBalances.length - 1].usdValue = currentBalance
-        }
-
-        expect(totalBalances).toStrictEqual([
+        expect(chartData).toStrictEqual([
             {
                 timestamp: expect.any(Number),
                 balances: {
@@ -242,5 +236,4 @@ describe('Historical prices', () => {
             },
         ])
     })
-    test('', () => {})
 })

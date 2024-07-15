@@ -16,7 +16,12 @@ export function createBatches<T>(
     return batches
 }
 
-export function getBalance(accs: [...ParsedAta[], ParsedAta]) {
+/**
+ * Takes in all the atas and returns price * balance for each
+ * @param accs
+ * @returns
+ */
+export function getNetWorth(accs: ParsedAta[]) {
     let balance = 0
     for (let i = 0; i < accs.length; i++) {
         balance += accs[i].price * accs[i].balance.formatted
