@@ -7,8 +7,6 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { Connection, ParsedAccountData, PublicKey } from '@solana/web3.js'
 import BN from 'bn.js'
 import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters'
-import { CoinGeckoClient } from 'coingecko-api-v3'
-import fs from 'fs'
 import coingeckoTokens from '../coingecko.json'
 
 /**

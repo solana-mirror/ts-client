@@ -1,7 +1,6 @@
 import dotenv from 'dotenv'
 import { PublicKey } from '@solana/web3.js'
 import SolanaMirror from '../src/SolanaMirror'
-import { CoinGeckoClient } from 'coingecko-api-v3'
 
 const TEST_ACCOUNT = new PublicKey(
     'GhCar5JLrUencisZDBLPFsWiWQs5qfimejpU5wjzgS8y'

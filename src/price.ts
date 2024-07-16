@@ -1,7 +1,6 @@
 import { createJupiterApiClient } from '@jup-ag/api'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { getDecimals } from './tokens'
-import { CoinGeckoClient } from 'coingecko-api-v3'
 
 /**
  * Use Jupiter to get swap quote
