@@ -4,7 +4,6 @@
     "description": "",
     "main": "src/index.ts",
     "scripts": {
-        "dev": "ts-node -r tsconfig-paths/register scripts/index.ts",
         "build": "rm -rf build/ && tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
         "test": "jest --coverage",
         "lint": "eslint src/**/*.ts --fix",

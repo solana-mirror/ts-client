@@ -309,7 +309,7 @@ export async function getTotalBalances(
     const mints = balances.map((bal) => Object.keys(bal))
     const uniqueMints = [...new Set(mints.flat())]
 
-    const mintPrices = {}
+    const coingeckoPrices = {}
 
     const from = states[0].timestamp
     const to = states.length === 1 ? from : states[states.length - 1].timestamp
@@ -320,22 +320,23 @@ export async function getTotalBalances(
 
     const newStates = [] as ChartDataWithPrice[]
 
-    for (const mint of uniqueMints) {
-        const id = coingeckoTokens[mint]?.id
-        if (!id) {
-            continue
-        }
-        if (from !== to) {
-            const prices = await coingecko.coinIdMarketChartRange({
+    // Only fetch coingecko prices from the past, if from === to
+    // The Jup price will be fetched
+    if (from !== to) {
+        for (const mint of uniqueMints) {
+            const id = coingeckoTokens[mint]?.id
+            if (!id) {
+                continue
+            }
+
+            const { prices } = await coingecko.coinIdMarketChartRange({
                 id,
                 vs_currency: 'usd',
                 from,
                 to,
             })
 
-            mintPrices[mint] = prices.prices
-        } else {
-            mintPrices[mint] = []
+            coingeckoPrices[mint] = prices
         }
     }
 
@@ -345,10 +346,6 @@ export async function getTotalBalances(
         const balsWithPrice = {} as Record<string, AmountWithPrice>
 
         for (const [mint, balance] of Object.entries(stateBals)) {
-            if (!mintPrices[mint]) {
-                continue
-            }
-
             const index = Math.floor((timestamp - from) / timeStep)
 
             const price = await (async () => {
@@ -361,11 +358,15 @@ export async function getTotalBalances(
                         USDC_PUBKEY
                     )
                 }
-                if (!mintPrices[mint][index]) {
+                if (!coingeckoPrices[mint]) {
                     return 0
                 }
-                return mintPrices[mint][index][1]
+                return coingeckoPrices[mint][index][1]
             })()
+
+            if (!price) {
+                continue
+            }
 
             balsWithPrice[mint] = {
                 ...balance,

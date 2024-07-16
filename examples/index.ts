@@ -1,3 +1,4 @@
+require('tsconfig-paths')
 import dotenv from 'dotenv'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { CoinGeckoClient } from 'coingecko-api-v3'
@@ -36,8 +37,6 @@ async function run() {
         timeframe: 'D',
         range: 14,
     })
-
-    console.log(chartData[chartData.length - 1])
 }
 
 run().catch(console.error)
