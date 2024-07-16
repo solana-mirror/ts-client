@@ -311,10 +311,12 @@ export async function getTotalBalances(
 
     const mintPrices = {}
 
-    const from =
-        // Substract 2 hours if there's only one state to get hourly price precision
-        states.length === 1 ? states[0].timestamp - 7200 : states[0].timestamp
-    const to = states[states.length - 1].timestamp
+    const from = states[0].timestamp
+    const to = states.length === 1 ? from : states[states.length - 1].timestamp
+
+    const diff = (to - from) / 86400
+    // handle edge case in which coingecko returns daily data (more than 90 days)
+    const timeStep = diff > 90 ? 86400 : 3600
 
     const newStates = [] as ChartDataWithPrice[]
 
@@ -323,14 +325,18 @@ export async function getTotalBalances(
         if (!id) {
             continue
         }
-        const prices = await coingecko.coinIdMarketChartRange({
-            id,
-            vs_currency: 'usd',
-            from,
-            to,
-        })
+        if (from !== to) {
+            const prices = await coingecko.coinIdMarketChartRange({
+                id,
+                vs_currency: 'usd',
+                from,
+                to,
+            })
 
-        mintPrices[mint] = prices.prices
+            mintPrices[mint] = prices.prices
+        } else {
+            mintPrices[mint] = []
+        }
     }
 
     for (let i = 0; i < states.length; i++) {
@@ -343,8 +349,7 @@ export async function getTotalBalances(
                 continue
             }
 
-            // TODO: handle edge case in which coingecko returns daily data (more than 90 days)
-            const index = Math.floor((timestamp - from) / 3600)
+            const index = Math.floor((timestamp - from) / timeStep)
 
             const price = await (async () => {
                 // Get current price from Jup for accurracy
