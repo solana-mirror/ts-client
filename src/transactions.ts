@@ -240,7 +240,7 @@ export function getBalanceStates(txs: ParsedTransaction[]) {
  * Filters the balance states to a specific timeframe and range
  * @param states
  * @param opts.timeframe "D" | "H"
- * @param opts.range number of days or hours
+ * @param opts.range number of days or hours. Max 90 days if hourly resolution
  */
 export function filterBalanceStates(
     states: ChartData[],

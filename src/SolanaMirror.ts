@@ -9,6 +9,7 @@ import {
 } from './transactions'
 import { fetchTransactions, parseTransaction } from './transactions'
 import {
+    ChartDataWithPrice,
     getPrice,
     parseAta,
     ParsedAta,
@@ -131,7 +132,7 @@ export default class SolanaMirror {
     /**
      * Fetches transactions for the watched address, filters them, and returns a chart of the balance over time
      * @param filterOpts.timeframe Either daily ("D") or hourly ("H")
-     * @param filterOpts.range Amount of timeframes to include
+     * @param filterOpts.range Amount of timeframes to include. Hourly range max is 90d
      * @param fetchTxOpts.batchSize Split transactions into batches of this size
      * @param fetchTxOpts.limit Fetch this many batches of transactions
      * @param fetchTxOpts.includeFailed Include failed transactions
@@ -141,6 +142,11 @@ export default class SolanaMirror {
         fetchTxOpts?: FetchTransactionsOpts
     ) {
         const txs = await this.getTransactions(fetchTxOpts)
+
+        const { timeframe, range } = filterOpts
+        if (timeframe === 'H' && range > 90 * 24) {
+            return [] as ChartDataWithPrice[]
+        }
 
         const states = getBalanceStates(txs)
         const filteredStates = filterBalanceStates(states, filterOpts)
