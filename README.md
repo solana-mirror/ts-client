@@ -1,1 +1,61 @@
 # Solana Mirror SDK
+
+Package that parses ATAs, transactions and generates chart data for a Solana wallet address. As of now, there are no dApp implementations -- the balances are just fetched from the wallet itself.
+
+## Getting started
+
+1. Install solana-mirror
+
+```bash
+npm i solana-mirror
+yarn add solana-mirror
+```
+
+2. Import the SolanaMirror class and initialize it
+
+```ts
+import SolanaMirror from 'solana-mirror'
+import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js'
+
+const rpc = clusterApiUrl('mainnet-beta')
+const connection = new Connection(rpc, 'confirmed')
+
+const wallet = new PublicKey('your_base58_wallet_address')
+
+const solanaMirror = new SolanaMirror({
+    rpc,
+    watch: wallet,
+})
+```
+
+## Functionalities
+
+-   Get the user's associated token accounts, parsed with their respective metadata and balances
+
+```ts
+const atas = await solanaMirror.getTokenAccounts()
+```
+
+-   Get the user's net worth
+
+```ts
+const netWorth = await solanaMirror.getNetWorth()
+```
+
+-   Get the parsed transactions
+
+```ts
+const txs = await solanaMirror.getTransactions({
+    includeFailed: true,
+    limit: 500,
+})
+```
+
+-   Get the formatted chart data (daily/hourly resolution) with historical balances and value
+
+```ts
+const chartData = await solanaMirror.getChartData({
+    timeframe: "H" // "D" for daily, "H" for hourly
+    range: 24*7 // 7 days
+})
+```

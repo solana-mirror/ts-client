@@ -23,8 +23,7 @@ import { BN } from 'bn.js'
 
 interface ISolanaMirrorArgs {
     watch: PublicKey
-    connection: Connection
-    coingecko: CoinGeckoClient
+    rpc: string
 }
 
 export default class SolanaMirror {
@@ -38,10 +37,12 @@ export default class SolanaMirror {
      * @param args.coingecko
      */
     constructor(args: ISolanaMirrorArgs) {
-        const { watch, connection, coingecko } = args
+        const { watch, rpc } = args
         this.watch = watch
-        this.coingecko = coingecko
-        this.connection = connection
+        this.coingecko = new CoinGeckoClient({
+            autoRetry: true,
+        })
+        this.connection = new Connection(rpc, 'confirmed')
     }
 
     /**
