@@ -7,7 +7,10 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { Connection, ParsedAccountData, PublicKey } from '@solana/web3.js'
 import BN from 'bn.js'
 import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters'
-import coingeckoTokens from '../coingecko.json'
+import coingecko from '../coingecko.json'
+
+// infer type from the json
+const coingeckoTokens = coingecko
 
 /**
  * Parses an ATA returned by the `connection` class

@@ -10,7 +10,6 @@ import { createBatches } from '../src/utils'
 import { filterBalanceStates, getBalanceStates } from '../src/transactions'
 import { BN } from 'bn.js'
 import { configDotenv } from 'dotenv'
-import { CoinGeckoClient } from 'coingecko-api-v3'
 import SolanaMirror from '../src/SolanaMirror'
 
 configDotenv()
@@ -28,26 +27,16 @@ if (!rpc) {
 
 const connection = new Connection(rpc, 'confirmed')
 
-const coingecko = new CoinGeckoClient(
-    {
-        timeout: 40000,
-        autoRetry: true,
-    },
-    process.env.COINGEKO
-)
-
 const solanaMirror = new SolanaMirror({
     watch: TEST_ACCOUNT,
-    connection,
-    coingecko,
+    rpc,
 })
 
 describe('Parent class', () => {
     test('Get correct watch address', () => {
         const testClient = new SolanaMirror({
             watch: TEST_ACCOUNT,
-            connection,
-            coingecko,
+            rpc,
         })
 
         const watchAddress = testClient.getWatchAddress()

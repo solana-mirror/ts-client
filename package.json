@@ -1,15 +1,16 @@
 {
     "name": "solana-mirror",
-    "version": "0.0.2",
+    "version": "0.0.6",
     "description": "",
-    "main": "src/index.ts",
+    "main": "build/src/index.js",
     "scripts": {
         "build": "rm -rf build/ && tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
         "test": "jest --coverage",
         "lint": "eslint src/**/*.ts --fix",
         "format": "prettier --write .",
         "precommit": "tsc && lint-staged",
-        "prepare": "husky"
+        "prepare": "husky",
+        "prepublishOnly": "npm run build"
     },
     "author": "config.json",
     "license": "ISC",
@@ -23,7 +24,8 @@
         "coingecko-api-v3": "^0.0.29",
         "dayjs": "^1.11.11",
         "decimal.js": "^10.4.3",
-        "dotenv": "^16.4.5"
+        "dotenv": "^16.4.5",
+        "solana-mirror": "^0.0.5"
     },
     "devDependencies": {
         "@types/bn.js": "^5.1.5",

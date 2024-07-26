@@ -11,7 +11,7 @@ import BN from 'bn.js'
 import { SOL_ADDRESS, USDC_PUBKEY } from './consts'
 import dayjs from 'dayjs'
 import { CoinGeckoClient } from 'coingecko-api-v3'
-import coingeckoTokens from '../coingecko.json'
+import coingecko from '../coingecko.json'
 import {
     AmountWithPrice,
     BalanceChange,
@@ -20,6 +20,9 @@ import {
     ParsedTransaction,
 } from './types'
 import { getPrice } from './price'
+
+// infer type from json
+const coingeckoTokens = coingecko
 
 type FetchSignaturesOpts = {
     before?: TransactionSignature
@@ -307,7 +310,9 @@ export async function getTotalBalances(
 ) {
     const balances = states.map((state) => state.balances)
     const mints = balances.map((bal) => Object.keys(bal))
-    const uniqueMints = [...new Set(mints.flat())]
+    const uniqueMints = mints
+        .flat()
+        .filter((value, index, array) => array.indexOf(value) === index)
 
     const coingeckoPrices = {}
 

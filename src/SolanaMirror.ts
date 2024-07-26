@@ -18,8 +18,11 @@ import {
     USDC_PUBKEY,
 } from '.'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import coingeckoTokens from '../coingecko.json'
+import coingecko from '../coingecko.json'
 import { BN } from 'bn.js'
+
+// infer type from json
+const coingeckoTokens = coingecko
 
 interface ISolanaMirrorArgs {
     watch: PublicKey
@@ -43,6 +46,13 @@ export default class SolanaMirror {
             autoRetry: true,
         })
         this.connection = new Connection(rpc, 'confirmed')
+    }
+
+    /**
+     * @returns The web3js connection
+     */
+    getConnection() {
+        return this.connection
     }
 
     /**
