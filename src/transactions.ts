@@ -27,7 +27,7 @@ const coingeckoTokens = coingecko
 type FetchSignaturesOpts = {
     before?: TransactionSignature
     after?: TransactionSignature
-    limit: number
+    limit?: number
 }
 
 export type FetchTransactionsOpts = {
@@ -53,47 +53,59 @@ export async function fetchSignatures(
     opts?: FetchSignaturesOpts
 ) {
     const { before, after, limit } = opts || {}
-    const signatures = await connection.getSignaturesForAddress(address, {
-        before,
-        until: after,
-        limit,
-    })
-    return signatures.map((sig) => sig.signature)
+    let _before = before
+    let shouldContinue = true
+    const signatures: string[] = []
+
+    while (shouldContinue) {
+        const _signatures = await connection.getSignaturesForAddress(address, {
+            before: _before,
+            until: after,
+            limit,
+        })
+        const mapped = _signatures.map((sig) => sig.signature)
+        _before = mapped[mapped.length - 1]
+        signatures.push(...mapped)
+
+        // Refetch only if the array is full
+        if (_signatures.length !== 1000) {
+            shouldContinue = false
+        }
+    }
+
+    return signatures
 }
 
 /**
  * Fetches all signatures of an address and parses transactions
  * @param connection
  * @param address
- * @param opts batchSize (100 by default), fetchFirstBatches, includeFailed (false by default)
- * @returns parsed transactions
+ * @param opts.includeFailed False by default
+ * @param opts.limit Limit of transactions to fetch. None by default
+ * @returns Parsed transactions
  */
 export async function fetchTransactions(
     connection: Connection,
     address: PublicKey,
     opts?: FetchTransactionsOpts
 ) {
-    const { batchSize, limit, includeFailed } = opts || {
-        batchSize: 100, // default batchSize
-    }
+    const { limit, includeFailed } = opts || {}
 
     const signatures = await fetchSignatures(connection, address)
-    const batches = createBatches(signatures, batchSize, limit)
+    const batches = createBatches(signatures, 900, limit)
+    const transactions: VersionedTransactionResponse[] = []
 
-    const transactions = await Promise.all(
-        batches.map(async (batch) => {
-            return await connection.getTransactions(batch, {
-                maxSupportedTransactionVersion: 0,
-            })
-        })
-    )
+    for (const batch of batches) {
+        const _txs = (await connection.getTransactions(batch, {
+            maxSupportedTransactionVersion: 0,
+        })) as VersionedTransactionResponse[]
 
-    const flat = transactions
-        .flat()
-        .sort(
-            (a, b) => (a?.blockTime || 0) - (b?.blockTime || 0)
-        ) as VersionedTransactionResponse[]
-    return includeFailed ? flat : flat.filter((tx) => tx?.meta?.err === null)
+        transactions.push(..._txs)
+    }
+
+    return includeFailed
+        ? transactions
+        : transactions.filter((tx) => tx?.meta?.err === null)
 }
 
 /**
