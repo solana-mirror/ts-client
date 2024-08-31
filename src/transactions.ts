@@ -20,6 +20,7 @@ import {
     ParsedTransaction,
 } from './types'
 import { getPrice } from './price'
+import fs from 'fs'
 
 // infer type from json
 const coingeckoTokens = coingecko
