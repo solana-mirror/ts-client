@@ -1,15 +1,9 @@
-import { AccountInfo, ParsedAccountData, PublicKey } from '@solana/web3.js'
+import { PublicKey } from '@solana/web3.js'
 import BN from 'bn.js'
 
-/**
- * Type for an associated token account returned by the `connection` class
- */
-export type AssociatedTokenAccount = {
-    account: AccountInfo<ParsedAccountData>
-    pubkey: PublicKey
-}
+type BalanceAmount = string | BN
 
-export type ParsedAta = {
+export type ParsedAta<T extends BalanceAmount> = {
     mint: PublicKey
     ata: PublicKey
     coingeckoId?: string
@@ -18,25 +12,22 @@ export type ParsedAta = {
     symbol: string
     image: string
     price: number
-    balance: {
-        amount: BN
-        formatted: number
-    }
+    balance: FormattedAmount<T>
 }
 
 /**
  * Stores the pre and post balances of a tx
  */
-export type BalanceChange = {
-    pre: FormattedAmount
-    post: FormattedAmount
+export type BalanceChange<T extends BalanceAmount> = {
+    pre: FormattedAmount<T>
+    post: FormattedAmount<T>
 }
 
-export type ParsedTransaction = {
+export type ParsedTransaction<T extends BalanceAmount> = {
     blockTime: number
     signatures: string[]
     logs: string[]
-    balances: Record<string, BalanceChange>
+    balances: Record<string, BalanceChange<T>>
     /**
      * Parsed ixs from the tx log
      */
@@ -46,31 +37,33 @@ export type ParsedTransaction = {
 /**
  * Record for a token balance
  */
-export type FormattedAmount = {
-    amount: BN
+export type FormattedAmount<T extends BalanceAmount> = {
+    amount: T
     formatted: number
 }
 
 /**
  * Record for a token balance with price
  */
-export type AmountWithPrice = FormattedAmount & {
+export type AmountWithPrice<T extends BalanceAmount> = FormattedAmount<T> & {
     price: number
 }
 
 /**
  * Record of balances at a given timestamp
  */
-export type ChartData = {
+export type ChartData<T extends BalanceAmount> = {
     timestamp: number
-    balances: Record<string, { amount: BN; formatted: number }>
+    balances: Record<string, FormattedAmount<T>>
 }
 
 /**
  * Record of balances at a given timestamp with price
  */
-export type ChartDataWithPrice = {
+export type ChartDataWithPrice<T extends BalanceAmount> = {
     timestamp: number
-    balances: Record<string, AmountWithPrice>
+    balances: Record<string, AmountWithPrice<T>>
     usdValue: number
 }
+
+export type Timeframe = 'd' | 'h'

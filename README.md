@@ -17,15 +17,11 @@ yarn add solana-mirror
 import SolanaMirror from 'solana-mirror'
 import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js'
 
-const rpc = clusterApiUrl('mainnet-beta')
 const connection = new Connection(rpc, 'confirmed')
 
 const wallet = new PublicKey('your_base58_wallet_address')
 
-const solanaMirror = new SolanaMirror({
-    rpc,
-    watch: wallet,
-})
+const solanaMirror = new SolanaMirror(wallet)
 ```
 
 ## Functionalities
@@ -34,12 +30,6 @@ const solanaMirror = new SolanaMirror({
 
 ```ts
 const atas = await solanaMirror.getTokenAccounts()
-```
-
--   Get the user's net worth
-
-```ts
-const netWorth = await solanaMirror.getNetWorth()
 ```
 
 -   Get the parsed transactions

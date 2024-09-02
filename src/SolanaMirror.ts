@@ -1,58 +1,32 @@
-import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
-import { CoinGeckoClient } from 'coingecko-api-v3'
-import {
-    FetchTransactionsOpts,
-    filterBalanceStates,
-    FilterBalanceStatesOpts,
-    getBalanceStates,
-    getTotalBalances,
-} from './transactions'
-import { fetchTransactions, parseTransaction } from './transactions'
+import { PublicKey } from '@solana/web3.js'
 import {
     ChartDataWithPrice,
-    getPrice,
-    parseAta,
     ParsedAta,
-    SOL_ADDRESS,
-    SOL_PUBKEY,
-    USDC_PUBKEY,
-} from '.'
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import coingecko from '../coingecko.json'
-import { BN } from 'bn.js'
+    Timeframe,
+    ParsedTransaction,
+} from './types'
+import { configDotenv } from 'dotenv'
+import BN from 'bn.js'
 
-// infer type from json
-const coingeckoTokens = coingecko
-
-interface ISolanaMirrorArgs {
-    watch: PublicKey
-    rpc: string
-}
+configDotenv()
 
 export default class SolanaMirror {
     private watch: PublicKey
-    private connection: Connection
-    private coingecko: CoinGeckoClient
+    private baseUrl: string
 
     /**
      * @param args.watch The address to watch
-     * @param args.connection
-     * @param args.coingecko
      */
-    constructor(args: ISolanaMirrorArgs) {
-        const { watch, rpc } = args
+    constructor(watch: PublicKey) {
         this.watch = watch
-        this.coingecko = new CoinGeckoClient({
-            autoRetry: true,
-        })
-        this.connection = new Connection(rpc, 'confirmed')
-    }
 
-    /**
-     * @returns The web3js connection
-     */
-    getConnection() {
-        return this.connection
+        // Check env for dev value
+        const env = process.env.SM_ENVIRONMENT
+        if (env == 'dev') {
+            this.baseUrl = 'http://localhost:8000'
+        } else {
+            this.baseUrl = 'https://api.solanamirror.xyz'
+        }
     }
 
     /**
@@ -75,98 +49,94 @@ export default class SolanaMirror {
      * @todo Migrate to [Solana.fm](https://api.solana.fm/v1/addresses/{account-hash}/tokens) endpoint once it's not in beta anymore
      */
     async getTokenAccounts() {
-        const { connection, watch } = this
-        const { value: atas } = await connection.getParsedTokenAccountsByOwner(
-            this.watch,
-            {
-                programId: TOKEN_PROGRAM_ID,
-            }
-        )
+        const endpoint = `/accounts/${this.watch}`
+        const res = await fetch(this.baseUrl + endpoint)
 
-        const parsedPromises = atas.map(async (ata) =>
-            parseAta(connection, watch, ata)
-        )
-
-        // Hardcode SOL as it's not included in the ATAs
-        const solPromise = (async () => {
-            const balance = await connection.getBalance(watch)
-            const formattedBalance = balance / LAMPORTS_PER_SOL
-            const price = await getPrice(connection, SOL_PUBKEY, USDC_PUBKEY)
-            const coingeckoId = coingeckoTokens[SOL_ADDRESS].id
-
-            const spotToken: ParsedAta = {
-                mint: SOL_PUBKEY,
-                ata: watch,
-                coingeckoId,
-                decimals: 9,
-                name: 'Wrapped Solana',
-                symbol: 'SOL',
-                image: '',
-                price,
-                balance: {
-                    amount: new BN(balance),
-                    formatted: formattedBalance,
-                },
-            }
-
-            return spotToken
-        })()
-
-        const parsedAtas = await Promise.all([...parsedPromises, solPromise])
-        return parsedAtas
-    }
-
-    /**
-     * Takes in all the atas and returns price * balance for each
-     * @returns USD value of all tokens
-     */
-    async getNetWorth() {
-        const accs = await this.getTokenAccounts()
-        let balance = 0
-        for (let i = 0; i < accs.length; i++) {
-            balance += accs[i].price * accs[i].balance.formatted
+        if (!res.ok) {
+            throw new Error(
+                `${endpoint} failed with status ${res.status}: ${res.statusText}`
+            )
         }
-        return +balance.toFixed(2)
+
+        const json = (await res.json()) as ParsedAta<string>[]
+        const parsed: ParsedAta<BN>[] = json.map((x) => ({
+            ...x,
+            ata: new PublicKey(x.ata),
+            mint: new PublicKey(x.mint),
+            balance: {
+                ...x.balance,
+                amount: new BN(x.balance.amount),
+            },
+        }))
+
+        return parsed
     }
 
     /**
      * Fetches transactions for the watched address and parses them
-     * @param opts.batchSize Split transactions into batches of this size
-     * @param opts.limit Fetch this many batches of transactions
-     * @param opts.includeFailed Include failed transactions
      */
-    async getTransactions(opts?: FetchTransactionsOpts) {
-        const txs = await fetchTransactions(this.connection, this.watch, opts)
-        return txs.map((tx) => parseTransaction(tx, this.watch))
+    async getTransactions() {
+        const endpoint = `/transactions/${this.watch}`
+        const res = await fetch(this.baseUrl + endpoint)
+
+        if (!res.ok) {
+            throw new Error(
+                `${endpoint} failed with status ${res.status}: ${res.statusText}`
+            )
+        }
+
+        const json = (await res.json()) as ParsedTransaction<string>[] // Parsing as ParsedTransaction<string>[] first
+        const parsed: ParsedTransaction<BN>[] = json.map((x) => ({
+            ...x,
+            balances: Object.fromEntries(
+                Object.entries(x.balances).map(([key, value]) => [
+                    key,
+                    {
+                        pre: {
+                            ...value.pre,
+                            amount: new BN(value.pre.amount),
+                        },
+                        post: {
+                            ...value.post,
+                            amount: new BN(value.post.amount),
+                        },
+                    },
+                ])
+            ),
+        }))
+
+        return parsed
     }
 
     /**
      * Fetches transactions for the watched address, filters them, and returns a chart of the balance over time
-     * @param filterOpts.timeframe Either daily ("D") or hourly ("H")
-     * @param filterOpts.range Amount of timeframes to include. Hourly range max is 90d
-     * @param fetchTxOpts.batchSize Split transactions into batches of this size
-     * @param fetchTxOpts.limit Fetch this many batches of transactions
-     * @param fetchTxOpts.includeFailed Include failed transactions
+     * @param timeframe Either daily ("D") or hourly ("H")
+     * @param range Amount of timeframes to include. Hourly range max is 90d
      */
-    async getChartData(
-        filterOpts: FilterBalanceStatesOpts,
-        fetchTxOpts?: FetchTransactionsOpts
-    ) {
-        const txs = await this.getTransactions(fetchTxOpts)
+    async getChartData(range: number, timeframe: Timeframe) {
+        const endpoint = `/chart/${this.watch}/${range}${timeframe}`
+        const res = await fetch(this.baseUrl + endpoint)
 
-        const { timeframe, range } = filterOpts
-        if (timeframe === 'H' && range > 90 * 24) {
-            return [] as ChartDataWithPrice[]
+        if (!res.ok) {
+            throw new Error(
+                `${endpoint} failed with status ${res.status}: ${res.statusText}`
+            )
         }
 
-        const states = getBalanceStates(txs)
-        const filteredStates = filterBalanceStates(states, filterOpts)
-        const chartWithBalances = getTotalBalances(
-            this.connection,
-            this.coingecko,
-            filteredStates
-        )
+        const json = (await res.json()) as ChartDataWithPrice<string>[]
+        const parsed: ChartDataWithPrice<BN>[] = json.map((x) => ({
+            ...x,
+            balances: Object.fromEntries(
+                Object.entries(x.balances).map(([key, value]) => [
+                    key,
+                    {
+                        ...value,
+                        amount: new BN(value.amount),
+                    },
+                ])
+            ),
+        }))
 
-        return chartWithBalances
+        return parsed
     }
 }
