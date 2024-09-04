@@ -32,14 +32,14 @@ export default class SolanaMirror {
      * @todo Migrate to [Solana.fm](https://api.solana.fm/v1/addresses/{account-hash}/tokens) endpoint once it's not in beta anymore
      */
     async getTokenAccounts() {
-        getTokenAccounts(this.watch)
+        return await getTokenAccounts(this.watch)
     }
 
     /**
      * Fetches transactions for the watched address and parses them
      */
     async getTransactions() {
-        getTransactions(this.watch)
+        return await getTransactions(this.watch)
     }
 
     /**
@@ -48,6 +48,6 @@ export default class SolanaMirror {
      * @param range Amount of timeframes to include. Hourly range max is 90d
      */
     async getChartData(range: number, timeframe: Timeframe) {
-        getChartData(this.watch, range, timeframe)
+        return await getChartData(this.watch, range, timeframe)
     }
 }
