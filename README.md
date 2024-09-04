@@ -35,17 +35,12 @@ const atas = await solanaMirror.getTokenAccounts()
 -   Get the parsed transactions
 
 ```ts
-const txs = await solanaMirror.getTransactions({
-    includeFailed: true,
-    limit: 500,
-})
+const txs = await solanaMirror.getTransactions()
 ```
 
 -   Get the formatted chart data (daily/hourly resolution) with historical balances and value
 
 ```ts
-const chartData = await solanaMirror.getChartData({
-    timeframe: "H" // "D" for daily, "H" for hourly
-    range: 24*7 // 7 days
-})
+const chartData = await solanaMirror.getChartData(7, "d")
 ```
+The functions are also available standalone, by passing an address to them
