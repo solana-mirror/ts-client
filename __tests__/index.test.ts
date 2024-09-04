@@ -100,7 +100,7 @@ describe('Endpoints', () => {
             parsedInstructions: expect.any(Array),
         })
     }, 10000)
-    test('Get correct total balances', async () => {
+    test('/chart/<address>/<timeframe>', async () => {
         const chartData = await solanaMirror.getChartData(255, 'd')
 
         expect(chartData[0]).toStrictEqual({
