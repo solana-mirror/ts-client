@@ -9,22 +9,10 @@ const TEST_ACCOUNT = new PublicKey(
 dotenv.config()
 
 async function run() {
-    const rpc = process.env.RPC_ENDPOINT
-    if (!rpc) {
-        throw new Error('Missing RPC_ENDPOINT')
-    }
+    const client = new SolanaMirror(TEST_ACCOUNT)
+    const atas = await client.getTokenAccounts()
 
-    const client = new SolanaMirror({
-        watch: TEST_ACCOUNT,
-        rpc,
-    })
-
-    const chartData = await client.getChartData({
-        timeframe: 'D',
-        range: 14,
-    })
-
-    console.log(chartData)
+    console.log(atas)
 }
 
 run().catch(console.error)
