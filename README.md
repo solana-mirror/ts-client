@@ -15,12 +15,9 @@ yarn add solana-mirror
 
 ```ts
 import SolanaMirror from 'solana-mirror'
-import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js'
-
-const connection = new Connection(rpc, 'confirmed')
+import { PublicKey } from '@solana/web3.js'
 
 const wallet = new PublicKey('your_base58_wallet_address')
-
 const solanaMirror = new SolanaMirror(wallet)
 ```
 
