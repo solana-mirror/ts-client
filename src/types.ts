@@ -26,7 +26,6 @@ export type BalanceChange<T extends BalanceAmount> = {
 export type ParsedTransaction<T extends BalanceAmount> = {
     blockTime: number
     signatures: string[]
-    logs: string[]
     balances: Record<string, BalanceChange<T>>
     /**
      * Parsed ixs from the tx log
@@ -45,7 +44,8 @@ export type FormattedAmount<T extends BalanceAmount> = {
 /**
  * Record for a token balance with price
  */
-export type AmountWithPrice<T extends BalanceAmount> = FormattedAmount<T> & {
+export type AmountWithPrice<T extends BalanceAmount> = {
+    amount: FormattedAmount<T>
     price: number
 }
 

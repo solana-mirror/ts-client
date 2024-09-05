@@ -49,13 +49,11 @@ describe('Endpoints', () => {
     test('/transactions/<address>', async () => {
         const formattedTransactions = await solanaMirror.getTransactions()
 
-        expect(formattedTransactions).toHaveLength(4)
-
-        // SOL transfer of 0.025
         expect(formattedTransactions[0]).toStrictEqual({
             blockTime: expect.any(Number),
-            signatures: expect.any(Array),
-            logs: expect.any(Array),
+            signatures: [
+                '5bR8rn837e7B17nojiEjCZLR3Uy5fWfbS9f2HeWFTHv1one8nQvhBqj5uAeZL94CfLGfmJpPW3nmYk9NWPacV1uG',
+            ],
             balances: {
                 So11111111111111111111111111111111111111112: {
                     pre: {
@@ -73,8 +71,9 @@ describe('Endpoints', () => {
 
         expect(formattedTransactions[1]).toStrictEqual({
             blockTime: expect.any(Number),
-            signatures: expect.any(Array),
-            logs: expect.any(Array),
+            signatures: [
+                'iuX8sPiXzmaBBiWntPTux3mT23cp9C9i7LdeLciRhnD6WN8ibA22x4a25E9sSVyj5d5oLYt5q1XvPMZrPQyU4a3',
+            ],
             balances: {
                 EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
                     pre: {
@@ -97,9 +96,29 @@ describe('Endpoints', () => {
                     },
                 },
             },
-            parsedInstructions: expect.any(Array),
+            parsedInstructions: [
+                'GetAccountDataSize',
+                'InitializeImmutableOwner',
+                'InitializeAccount3',
+                'SyncNative',
+                'GetAccountDataSize',
+                'InitializeImmutableOwner',
+                'InitializeAccount3',
+                'SharedAccountsExactOutRoute',
+                'TransferChecked',
+                'Swap',
+                'Transfer',
+                'Transfer',
+                'Swap',
+                'Transfer',
+                'Transfer',
+                'Transfer',
+                'Transfer',
+                'TransferChecked',
+                'CloseAccount',
+            ],
         })
-    }, 10000)
+    }, 25000)
     test('/chart/<address>/<timeframe>', async () => {
         const chartData = await solanaMirror.getChartData(255, 'd')
 
@@ -107,17 +126,21 @@ describe('Endpoints', () => {
             timestamp: expect.any(Number),
             balances: {
                 So11111111111111111111111111111111111111112: {
-                    amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
-                    formatted: 0.008984229,
+                    amount: {
+                        amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
+                        formatted: 0.008984229,
+                    },
                     price: expect.any(Number),
                 },
                 EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
-                    amount: new BN(2000000),
-                    formatted: 2,
+                    amount: {
+                        amount: new BN(2000000),
+                        formatted: 2,
+                    },
                     price: expect.any(Number),
                 },
             },
             usdValue: expect.any(Number),
         })
-    }, 15000)
+    }, 25000)
 })

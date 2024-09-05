@@ -48,7 +48,7 @@ export async function getTransactions(address: PublicKey) {
         )
     }
 
-    const json = (await res.json()) as ParsedTransaction<string>[] // Parsing as ParsedTransaction<string>[] first
+    const json = (await res.json()) as ParsedTransaction<string>[]
     const parsed: ParsedTransaction<BN>[] = json.map((x) => ({
         ...x,
         balances: Object.fromEntries(
@@ -93,7 +93,10 @@ export async function getChartData(
                 key,
                 {
                     ...value,
-                    amount: new BN(value.amount),
+                    amount: {
+                        ...value.amount,
+                        amount: new BN(value.amount.amount),
+                    },
                 },
             ])
         ),
