@@ -1,12 +1,17 @@
 import { PublicKey } from '@solana/web3.js'
 import { Timeframe } from './types'
-import { getChartData, getTokenAccounts, getTransactions } from './functions'
+import {
+    FetchOpts,
+    getChartData,
+    getTokenAccounts,
+    getTransactions,
+} from './functions'
 
 export default class SolanaMirror {
     private watch: PublicKey
 
     /**
-     * @param args.watch The address to watch
+     * @param watch The address to watch
      */
     constructor(watch: PublicKey) {
         this.watch = watch
@@ -29,25 +34,27 @@ export default class SolanaMirror {
 
     /**
      * Gets the ATAs for an account and token info for each
-     * @todo Migrate to [Solana.fm](https://api.solana.fm/v1/addresses/{account-hash}/tokens) endpoint once it's not in beta anymore
+     * @param opts.parse Parse `PublicKey`s and `BN`s or keep them as strings
      */
-    async getTokenAccounts() {
-        return await getTokenAccounts(this.watch)
+    async getTokenAccounts(opts?: FetchOpts) {
+        return await getTokenAccounts(this.watch, opts)
     }
 
     /**
      * Fetches transactions for the watched address and parses them
+     * @param opts.parse Parse `PublicKey`s and `BN`s or keep them as strings
      */
-    async getTransactions() {
-        return await getTransactions(this.watch)
+    async getTransactions(opts?: FetchOpts) {
+        return await getTransactions(this.watch, opts)
     }
 
     /**
      * Fetches transactions for the watched address, filters them, and returns a chart of the balance over time
      * @param timeframe Either daily ("D") or hourly ("H")
      * @param range Amount of timeframes to include. Hourly range max is 90d
+     * @param opts.parse Parse `PublicKey`s and `BN`s or keep them as strings
      */
-    async getChartData(range: number, timeframe: Timeframe) {
-        return await getChartData(this.watch, range, timeframe)
+    async getChartData(range: number, timeframe: Timeframe, opts?: FetchOpts) {
+        return await getChartData(this.watch, range, timeframe, opts)
     }
 }
