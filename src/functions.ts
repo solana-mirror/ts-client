@@ -14,7 +14,11 @@ const ENV = process.env.SM_ENV
 const BASE_URL =
     ENV == 'dev' ? 'http://localhost:8000' : 'https://api.solanamirror.xyz'
 
-export async function getTokenAccounts(address: PublicKey) {
+export type FetchOpts = {
+    parse: boolean
+}
+
+export async function getTokenAccounts(address: PublicKey, opts?: FetchOpts) {
     const endpoint = `/accounts/${address.toString()}`
     const res = await fetch(BASE_URL + endpoint)
 
@@ -24,8 +28,13 @@ export async function getTokenAccounts(address: PublicKey) {
         )
     }
 
-    const json = (await res.json()) as ParsedAta<string>[]
-    const parsed: ParsedAta<BN>[] = json.map((x) => ({
+    const json = (await res.json()) as ParsedAta<string, string>[]
+
+    if (!opts?.parse) {
+        return json
+    }
+
+    const parsed: ParsedAta<BN, PublicKey>[] = json.map((x) => ({
         ...x,
         ata: new PublicKey(x.ata),
         mint: new PublicKey(x.mint),
@@ -38,7 +47,7 @@ export async function getTokenAccounts(address: PublicKey) {
     return parsed
 }
 
-export async function getTransactions(address: PublicKey) {
+export async function getTransactions(address: PublicKey, opts?: FetchOpts) {
     const endpoint = `/transactions/${address.toString()}`
     const res = await fetch(BASE_URL + endpoint)
 
@@ -49,6 +58,11 @@ export async function getTransactions(address: PublicKey) {
     }
 
     const json = (await res.json()) as ParsedTransaction<string>[]
+
+    if (!opts?.parse) {
+        return json
+    }
+
     const parsed: ParsedTransaction<BN>[] = json.map((x) => ({
         ...x,
         balances: Object.fromEntries(
@@ -74,7 +88,8 @@ export async function getTransactions(address: PublicKey) {
 export async function getChartData(
     address: PublicKey,
     range: number,
-    timeframe: Timeframe
+    timeframe: Timeframe,
+    opts?: FetchOpts
 ) {
     const endpoint = `/chart/${address}/${range}${timeframe}`
     const res = await fetch(BASE_URL + endpoint)
@@ -86,6 +101,11 @@ export async function getChartData(
     }
 
     const json = (await res.json()) as ChartDataWithPrice<string>[]
+
+    if (!opts?.parse) {
+        return json
+    }
+
     const parsed: ChartDataWithPrice<BN>[] = json.map((x) => ({
         ...x,
         balances: Object.fromEntries(
