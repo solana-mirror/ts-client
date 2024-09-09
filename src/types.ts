@@ -34,6 +34,11 @@ export type ParsedTransaction<T extends BalanceAmountOpts> = {
     parsedInstructions: string[]
 }
 
+export type TransactionResponse<T extends BalanceAmountOpts> = {
+    transactions: ParsedTransaction<T>[]
+    count: number
+}
+
 /**
  * Record for a token balance
  */

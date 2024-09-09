@@ -2,6 +2,11 @@ import { describe, test, expect } from '@jest/globals'
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import BN from 'bn.js'
 import SolanaMirror from '../src/SolanaMirror'
+import {
+    ChartDataWithPrice,
+    ParsedAta,
+    TransactionResponse,
+} from '../src/types'
 
 const USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 const USDC_PUBKEY = new PublicKey(USDC_ADDRESS)
@@ -28,7 +33,9 @@ describe('Parent class', () => {
 
 describe('Endpoints', () => {
     test('/accounts/<address>', async () => {
-        const atas = await solanaMirror.getTokenAccounts()
+        const atas = (await solanaMirror.getTokenAccounts({
+            parse: true,
+        })) as ParsedAta<BN, PublicKey>[]
         const usdcAta = atas.find((ata) => ata.mint.toString() === USDC_ADDRESS)
 
         expect(usdcAta).toStrictEqual({
@@ -47,9 +54,11 @@ describe('Endpoints', () => {
         })
     })
     test('/transactions/<address>', async () => {
-        const formattedTransactions = await solanaMirror.getTransactions()
+        const formattedTransactions = (await solanaMirror.getTransactions({
+            parse: true,
+        })) as TransactionResponse<BN>
 
-        expect(formattedTransactions[0]).toStrictEqual({
+        expect(formattedTransactions.transactions[0]).toStrictEqual({
             blockTime: expect.any(Number),
             signatures: [
                 '5bR8rn837e7B17nojiEjCZLR3Uy5fWfbS9f2HeWFTHv1one8nQvhBqj5uAeZL94CfLGfmJpPW3nmYk9NWPacV1uG',
@@ -69,7 +78,7 @@ describe('Endpoints', () => {
             parsedInstructions: [],
         })
 
-        expect(formattedTransactions[1]).toStrictEqual({
+        expect(formattedTransactions.transactions[1]).toStrictEqual({
             blockTime: expect.any(Number),
             signatures: [
                 'iuX8sPiXzmaBBiWntPTux3mT23cp9C9i7LdeLciRhnD6WN8ibA22x4a25E9sSVyj5d5oLYt5q1XvPMZrPQyU4a3',
@@ -120,7 +129,9 @@ describe('Endpoints', () => {
         })
     }, 25000)
     test('/chart/<address>/<timeframe>', async () => {
-        const chartData = await solanaMirror.getChartData(255, 'd')
+        const chartData = (await solanaMirror.getChartData(255, 'd', {
+            parse: true,
+        })) as ChartDataWithPrice<BN>[]
 
         expect(chartData[0]).toStrictEqual({
             timestamp: expect.any(Number),
