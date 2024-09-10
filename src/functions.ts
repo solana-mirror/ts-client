@@ -4,6 +4,7 @@ import {
     ParsedAta,
     Timeframe,
     ChartDataWithPrice,
+    TransactionResponse,
 } from './types'
 import BN from 'bn.js'
 import { configDotenv } from 'dotenv'
@@ -47,8 +48,13 @@ export async function getTokenAccounts(address: PublicKey, opts?: FetchOpts) {
     return parsed
 }
 
-export async function getTransactions(address: PublicKey, opts?: FetchOpts) {
-    const endpoint = `/transactions/${address.toString()}`
+export async function getTransactions(
+    address: PublicKey,
+    index?: [number, number],
+    opts?: FetchOpts
+) {
+    const query = index ? `?index=${index[0]}-${index[1]}` : ''
+    const endpoint = `/transactions/${address.toString()}${query}`
     const res = await fetch(BASE_URL + endpoint)
 
     if (!res.ok) {
@@ -57,13 +63,13 @@ export async function getTransactions(address: PublicKey, opts?: FetchOpts) {
         )
     }
 
-    const json = (await res.json()) as ParsedTransaction<string>[]
+    const json = (await res.json()) as TransactionResponse<string>
 
     if (!opts?.parse) {
         return json
     }
 
-    const parsed: ParsedTransaction<BN>[] = json.map((x) => ({
+    const parsed: ParsedTransaction<BN>[] = json.transactions.map((x) => ({
         ...x,
         balances: Object.fromEntries(
             Object.entries(x.balances).map(([key, value]) => [
@@ -82,7 +88,10 @@ export async function getTransactions(address: PublicKey, opts?: FetchOpts) {
         ),
     }))
 
-    return parsed
+    return {
+        transactions: parsed,
+        count: json.count,
+    } as TransactionResponse<BN>
 }
 
 export async function getChartData(

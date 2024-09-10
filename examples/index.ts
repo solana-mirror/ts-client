@@ -10,9 +10,9 @@ dotenv.config()
 
 async function run() {
     const client = new SolanaMirror(TEST_ACCOUNT)
-    const atas = await client.getTokenAccounts()
+    const txs = await client.getTransactions([0, 2])
 
-    console.log(atas)
+    console.log(txs)
 }
 
 run().catch(console.error)

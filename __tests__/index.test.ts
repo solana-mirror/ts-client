@@ -2,7 +2,11 @@ import { describe, test, expect } from '@jest/globals'
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import BN from 'bn.js'
 import SolanaMirror from '../src/SolanaMirror'
-import { ParsedAta, ParsedTransaction, ChartDataWithPrice } from '../src/types'
+import {
+    ChartDataWithPrice,
+    ParsedAta,
+    TransactionResponse,
+} from '../src/types'
 
 const USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 const USDC_PUBKEY = new PublicKey(USDC_ADDRESS)
@@ -50,11 +54,11 @@ describe('Endpoints', () => {
         })
     })
     test('/transactions/<address>', async () => {
-        const formattedTransactions = (await solanaMirror.getTransactions({
+        const formattedTransactions = (await solanaMirror.getTransactions(undefined, {
             parse: true,
-        })) as ParsedTransaction<BN>[]
+        })) as TransactionResponse<BN>
 
-        expect(formattedTransactions[0]).toStrictEqual({
+        expect(formattedTransactions.transactions[0]).toStrictEqual({
             blockTime: expect.any(Number),
             signatures: [
                 '5bR8rn837e7B17nojiEjCZLR3Uy5fWfbS9f2HeWFTHv1one8nQvhBqj5uAeZL94CfLGfmJpPW3nmYk9NWPacV1uG',
@@ -74,7 +78,7 @@ describe('Endpoints', () => {
             parsedInstructions: [],
         })
 
-        expect(formattedTransactions[1]).toStrictEqual({
+        expect(formattedTransactions.transactions[1]).toStrictEqual({
             blockTime: expect.any(Number),
             signatures: [
                 'iuX8sPiXzmaBBiWntPTux3mT23cp9C9i7LdeLciRhnD6WN8ibA22x4a25E9sSVyj5d5oLYt5q1XvPMZrPQyU4a3',

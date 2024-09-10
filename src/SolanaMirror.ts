@@ -42,10 +42,11 @@ export default class SolanaMirror {
 
     /**
      * Fetches transactions for the watched address and parses them
+     * @param index Used for pagination, first and last index of the transactions fetched
      * @param opts.parse Parse `PublicKey`s and `BN`s or keep them as strings
      */
-    async getTransactions(opts?: FetchOpts) {
-        return await getTransactions(this.watch, opts)
+    async getTransactions(index?: [number, number], opts?: FetchOpts) {
+        return await getTransactions(this.watch, index, opts)
     }
 
     /**
