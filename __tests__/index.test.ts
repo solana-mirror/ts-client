@@ -54,7 +54,7 @@ describe('Endpoints', () => {
         })
     })
     test('/transactions/<address>', async () => {
-        const formattedTransactions = (await solanaMirror.getTransactions({
+        const formattedTransactions = (await solanaMirror.getTransactions(undefined, {
             parse: true,
         })) as TransactionResponse<BN>
 
