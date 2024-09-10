@@ -53,7 +53,7 @@ export async function getTransactions(
     index?: [number, number],
     opts?: FetchOpts
 ) {
-    const query = index && `?index=${index[0]}-${index[1]}`
+    const query = index ? `?index=${index[0]}-${index[1]}` : ''
     const endpoint = `/transactions/${address.toString()}${query}`
     const res = await fetch(BASE_URL + endpoint)
 
