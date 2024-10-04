@@ -53,9 +53,15 @@ export default class SolanaMirror {
      * Fetches transactions for the watched address, filters them, and returns a chart of the balance over time
      * @param timeframe Either daily ("D") or hourly ("H")
      * @param range Amount of timeframes to include. Hourly range max is 90d
+     * @param detailed Retrieve detailed states (balances included) or only usdValues with their timestamps
      * @param opts.parse Parse `PublicKey`s and `BN`s or keep them as strings
      */
-    async getChartData(range: number, timeframe: Timeframe, opts?: FetchOpts) {
-        return await getChartData(this.watch, range, timeframe, opts)
+    async getChartData(
+        range: number,
+        timeframe: Timeframe,
+        detailed?: boolean,
+        opts?: FetchOpts
+    ) {
+        return await getChartData(this.watch, range, timeframe, detailed, opts)
     }
 }

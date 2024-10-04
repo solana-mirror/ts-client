@@ -98,9 +98,11 @@ export async function getChartData(
     address: PublicKey,
     range: number,
     timeframe: Timeframe,
+    detailed?: boolean,
     opts?: FetchOpts
 ) {
-    const endpoint = `/chart/${address}/${range}${timeframe}`
+    const query = detailed ? `?detailed=${detailed}` : ''
+    const endpoint = `/chart/${address}/${range}${timeframe}${query}`
     const res = await fetch(BASE_URL + endpoint)
 
     if (!res.ok) {
