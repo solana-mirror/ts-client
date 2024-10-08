@@ -72,4 +72,12 @@ export type ChartDataWithPrice<T extends BalanceAmountOpts> = {
     usdValue: number
 }
 
+/**
+ * Usd balance and its corresponding timestamp
+ */
+export type MinimalChartData = {
+    timestamp: number
+    usdValue: number
+}
+
 export type Timeframe = 'd' | 'h'
