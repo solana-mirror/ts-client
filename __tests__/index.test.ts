@@ -54,9 +54,12 @@ describe('Endpoints', () => {
         })
     })
     test('/transactions/<address>', async () => {
-        const formattedTransactions = (await solanaMirror.getTransactions(undefined, {
-            parse: true,
-        })) as TransactionResponse<BN>
+        const formattedTransactions = (await solanaMirror.getTransactions(
+            undefined,
+            {
+                parse: true,
+            }
+        )) as TransactionResponse<BN>
 
         expect(formattedTransactions.transactions[0]).toStrictEqual({
             blockTime: expect.any(Number),
@@ -129,7 +132,7 @@ describe('Endpoints', () => {
         })
     }, 25000)
     test('/chart/<address>/<timeframe>', async () => {
-        const chartData = (await solanaMirror.getChartData(255, 'd', {
+        const chartData = (await solanaMirror.getChartData(255, 'd', true, {
             parse: true,
         })) as ChartDataWithPrice<BN>[]
 
