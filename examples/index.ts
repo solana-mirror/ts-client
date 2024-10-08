@@ -10,7 +10,7 @@ dotenv.config()
 
 async function run() {
     const client = new SolanaMirror(TEST_ACCOUNT)
-    const txs = await client.getTransactions([0, 2])
+    const txs = await client.getChartData(80, 'd', false)
 
     console.log(txs)
 }
