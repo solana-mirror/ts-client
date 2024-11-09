@@ -5,6 +5,7 @@ import {
     Timeframe,
     ChartDataWithPrice,
     TransactionResponse,
+    BalancesResponse,
 } from './types'
 import BN from 'bn.js'
 import { configDotenv } from 'dotenv'
@@ -30,16 +31,13 @@ export async function getTokenAccounts(address: PublicKey, opts?: FetchOpts) {
         )
     }
 
-    const json = ((await res.json()) as any).accounts as ParsedAta<
-        string,
-        string
-    >[]
+    const { accounts } = (await res.json()) as BalancesResponse<string, string>
 
     if (!opts?.parse) {
-        return json
+        return accounts
     }
 
-    const parsed: ParsedAta<BN, PublicKey>[] = json.map((x) => ({
+    const parsed: ParsedAta<BN, PublicKey>[] = accounts.map((x) => ({
         ...x,
         ata: new PublicKey(x.ata),
         mint: new PublicKey(x.mint),

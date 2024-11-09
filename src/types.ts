@@ -4,9 +4,12 @@ import BN from 'bn.js'
 type BalanceAmountOpts = string | BN
 type PublicKeyOpts = PublicKey | string
 
-export type AllBalances = {
-    accounts: ParsedAta<BN, PublicKey>[]
-    raydium: ParsedPosition<string>[]
+export type BalancesResponse<
+    B extends BalanceAmountOpts,
+    P extends PublicKeyOpts,
+> = {
+    accounts: ParsedAta<B, P>[]
+    raydium?: ParsedPosition<B>[]
 }
 
 export type ParsedAta<B extends BalanceAmountOpts, P extends PublicKeyOpts> = {
