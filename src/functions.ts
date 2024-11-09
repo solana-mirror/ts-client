@@ -20,7 +20,8 @@ export type FetchOpts = {
 }
 
 export async function getTokenAccounts(address: PublicKey, opts?: FetchOpts) {
-    const endpoint = `/accounts/${address.toString()}`
+    const query = '?showApps=false'
+    const endpoint = `/balances/${address.toString()}${query}`
     const res = await fetch(BASE_URL + endpoint)
 
     if (!res.ok) {
@@ -29,7 +30,10 @@ export async function getTokenAccounts(address: PublicKey, opts?: FetchOpts) {
         )
     }
 
-    const json = (await res.json()) as ParsedAta<string, string>[]
+    const json = ((await res.json()) as any).accounts as ParsedAta<
+        string,
+        string
+    >[]
 
     if (!opts?.parse) {
         return json
