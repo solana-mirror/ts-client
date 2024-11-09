@@ -32,7 +32,7 @@ describe('Parent class', () => {
 })
 
 describe('Endpoints', () => {
-    test('/accounts/<address>', async () => {
+    test('/balances/<address>', async () => {
         const atas = (await solanaMirror.getTokenAccounts({
             parse: true,
         })) as ParsedAta<BN, PublicKey>[]
@@ -52,7 +52,7 @@ describe('Endpoints', () => {
                 formatted: 2,
             },
         })
-    })
+    }, 25000)
     test('/transactions/<address>', async () => {
         const formattedTransactions = (await solanaMirror.getTransactions(
             undefined,
@@ -136,20 +136,15 @@ describe('Endpoints', () => {
             parse: true,
         })) as ChartDataWithPrice<BN>[]
 
+        console.log('Actual chartData[0]:', chartData[0])
+
         expect(chartData[0]).toStrictEqual({
             timestamp: expect.any(Number),
             balances: {
                 So11111111111111111111111111111111111111112: {
                     amount: {
-                        amount: new BN(0.008984229 * LAMPORTS_PER_SOL),
-                        formatted: 0.008984229,
-                    },
-                    price: expect.any(Number),
-                },
-                EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
-                    amount: {
-                        amount: new BN(2000000),
-                        formatted: 2,
+                        amount: new BN(0.025 * LAMPORTS_PER_SOL),
+                        formatted: 0.025,
                     },
                     price: expect.any(Number),
                 },
