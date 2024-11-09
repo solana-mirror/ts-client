@@ -4,6 +4,14 @@ import BN from 'bn.js'
 type BalanceAmountOpts = string | BN
 type PublicKeyOpts = PublicKey | string
 
+export type BalancesResponse<
+    B extends BalanceAmountOpts,
+    P extends PublicKeyOpts,
+> = {
+    accounts: ParsedAta<B, P>[]
+    raydium?: ParsedPosition<B>[]
+}
+
 export type ParsedAta<B extends BalanceAmountOpts, P extends PublicKeyOpts> = {
     mint: P
     ata: P
@@ -14,6 +22,33 @@ export type ParsedAta<B extends BalanceAmountOpts, P extends PublicKeyOpts> = {
     image: string
     price: number
     balance: FormattedAmount<B>
+}
+
+export type ParsedPosition<T extends BalanceAmountOpts> = {
+    totalValueUsd?: number
+    protocol: ProtocolInfo
+    tokenA: TokenPosition<T>
+    tokenB: TokenPosition<T>
+    feeTier: string
+}
+
+export type ProtocolInfo = {
+    name: string
+    symbol: string
+    image: string
+    programId: string
+}
+
+export type TokenPosition<T extends BalanceAmountOpts> = {
+    mint: string
+    name: string
+    symbol: string
+    image: string
+    amount: FormattedAmountWithPrice<T>
+}
+
+export type AccountsOnly = {
+    accounts: ParsedAta<BN, PublicKey>[]
 }
 
 /**
@@ -50,7 +85,7 @@ export type FormattedAmount<T extends BalanceAmountOpts> = {
 /**
  * Record for a token balance with price
  */
-export type AmountWithPrice<T extends BalanceAmountOpts> = {
+export type FormattedAmountWithPrice<T extends BalanceAmountOpts> = {
     amount: FormattedAmount<T>
     price: number
 }
@@ -68,7 +103,7 @@ export type ChartData<T extends BalanceAmountOpts> = {
  */
 export type ChartDataWithPrice<T extends BalanceAmountOpts> = {
     timestamp: number
-    balances: Record<string, AmountWithPrice<T>>
+    balances: Record<string, FormattedAmountWithPrice<T>>
     usdValue: number
 }
 
