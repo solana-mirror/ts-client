@@ -36,7 +36,7 @@ export type ProtocolInfo = {
     name: string
     symbol: string
     image: string
-    programId: string
+    poolId: string
 }
 
 export type TokenPosition<T extends BalanceAmountOpts> = {
