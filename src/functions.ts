@@ -20,8 +20,12 @@ export type FetchOpts = {
     parse: boolean
 }
 
-export async function getTokenAccounts(address: PublicKey, opts?: FetchOpts) {
-    const query = '?showApps=false'
+export async function getTokenAccounts(
+    address: PublicKey,
+    showApps?: boolean,
+    opts?: FetchOpts
+) {
+    const query = showApps !== undefined ? `?showApps=${showApps}` : ''
     const endpoint = `/balances/${address.toString()}${query}`
     const res = await fetch(BASE_URL + endpoint)
 
@@ -31,23 +35,54 @@ export async function getTokenAccounts(address: PublicKey, opts?: FetchOpts) {
         )
     }
 
-    const { accounts } = (await res.json()) as BalancesResponse<string, string>
+    const balances = (await res.json()) as BalancesResponse<string, string>
 
     if (!opts?.parse) {
-        return accounts
+        return balances
     }
 
-    const parsed: ParsedAta<BN, PublicKey>[] = accounts.map((x) => ({
-        ...x,
-        ata: new PublicKey(x.ata),
-        mint: new PublicKey(x.mint),
-        balance: {
-            ...x.balance,
-            amount: new BN(x.balance.amount),
+    const parsedAccounts: ParsedAta<BN, PublicKey>[] = balances.accounts.map(
+        (x) => ({
+            ...x,
+            ata: new PublicKey(x.ata),
+            mint: new PublicKey(x.mint),
+            balance: {
+                ...x.balance,
+                amount: new BN(x.balance.amount),
+            },
+        })
+    )
+
+    const parsedRaydium = balances.raydium?.map((position) => ({
+        ...position,
+        tokenA: {
+            ...position.tokenA,
+            mint: new PublicKey(position.tokenA.mint),
+            amount: {
+                ...position.tokenA.amount,
+                amount: {
+                    ...position.tokenA.amount.amount,
+                    amount: new BN(position.tokenA.amount.amount.amount),
+                },
+            },
+        },
+        tokenB: {
+            ...position.tokenB,
+            mint: new PublicKey(position.tokenB.mint),
+            amount: {
+                ...position.tokenB.amount,
+                amount: {
+                    ...position.tokenB.amount.amount,
+                    amount: new BN(position.tokenB.amount.amount.amount),
+                },
+            },
         },
     }))
 
-    return parsed
+    return {
+        accounts: parsedAccounts,
+        raydium: parsedRaydium,
+    }
 }
 
 export async function getTransactions(

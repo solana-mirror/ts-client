@@ -36,8 +36,8 @@ export default class SolanaMirror {
      * Gets the ATAs for an account and token info for each
      * @param opts.parse Parse `PublicKey`s and `BN`s or keep them as strings
      */
-    async getTokenAccounts(opts?: FetchOpts) {
-        return await getTokenAccounts(this.watch, opts)
+    async getTokenAccounts(showApps?: boolean, opts?: FetchOpts) {
+        return await getTokenAccounts(this.watch, showApps, opts)
     }
 
     /**
