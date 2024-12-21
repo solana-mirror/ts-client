@@ -3,6 +3,7 @@ import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import BN from 'bn.js'
 import SolanaMirror from '../src/SolanaMirror'
 import {
+    BalancesResponse,
     ChartDataWithPrice,
     ParsedAta,
     TransactionResponse,
@@ -33,10 +34,12 @@ describe('Parent class', () => {
 
 describe('Endpoints', () => {
     test('/balances/<address>', async () => {
-        const atas = (await solanaMirror.getTokenAccounts({
+        const balances = (await solanaMirror.getTokenAccounts(false, {
             parse: true,
-        })) as ParsedAta<BN, PublicKey>[]
-        const usdcAta = atas.find((ata) => ata.mint.toString() === USDC_ADDRESS)
+        })) as BalancesResponse<BN, PublicKey>
+        const usdcAta = balances.accounts.find(
+            (ata) => ata.mint.toString() === USDC_ADDRESS
+        )
 
         expect(usdcAta).toStrictEqual({
             mint: USDC_PUBKEY,
