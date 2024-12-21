@@ -34,7 +34,7 @@ export async function getTokenAccounts(
             `${endpoint} failed with status ${res.status}: ${res.statusText}`
         )
     }
-
+  
     const balances = (await res.json()) as BalancesResponse<string, string>
 
     if (!opts?.parse) {
@@ -52,7 +52,7 @@ export async function getTokenAccounts(
             },
         })
     )
-
+    
     const parsedRaydium = balances.raydium?.map((position) => ({
         ...position,
         tokenA: {
